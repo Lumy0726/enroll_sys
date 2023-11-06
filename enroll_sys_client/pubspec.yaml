@@ -1,5 +1,6 @@
 name: enroll_sys_client
 description: Client-side program for enrollment system.
+publish_to: 'none'
 version: 1.0.0
 
 environment:
