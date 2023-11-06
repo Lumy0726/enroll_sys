@@ -29,8 +29,10 @@ class BrdStreamWithCancel<T> {
   }
   Stream<T> get stream => _brdStream;
   void cancelStream() {
-    _doCancel = true;
-    _brdStream.listen(null).cancel();
+    if (!_doCancel) {
+      _doCancel = true;
+      _brdStream.listen(null).cancel();
+    }
   }
 }
 
