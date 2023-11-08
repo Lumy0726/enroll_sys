@@ -18,7 +18,7 @@ import 'dart:async';
 //  after 'stdin.asBroadcastStream', before end of program.
 //  See 'https://github.com/dart-lang/sdk/issues/45098' for related issues.
 class BrdStreamWithCancel<T> {
-  late Stream<T> _brdStream;
+  Stream<T> _brdStream;
   bool _doCancel = false;
   BrdStreamWithCancel(Stream<T> inStream) : _brdStream = inStream {
     _brdStream = inStream.asBroadcastStream(
