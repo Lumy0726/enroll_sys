@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('A group of tests', () {
-    final courseInfo = CourseInfo();
+    final courseInfo = CourseInfo('');
 
     setUp(() {
       // Additional setup goes here.

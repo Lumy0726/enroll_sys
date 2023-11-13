@@ -1,11 +1,15 @@
-
 import 'package:enroll_sys/enroll_sys.dart';
+import './es_client_session.dart';
 
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 
 //'EsClient' class (Enrollment System Client).
+//Client program's entry point
+//handles user input (stdin for now)
+//handles http(s) connections
+//handles basic client operations
 //
 //NOTE: Due to UI handling,
 //  all of the function in this class,
@@ -91,18 +95,74 @@ class EsClient {
   //  when the client is running.
   //  no need to handle 'exit' command at here.
   static Future<void> onStdinLine(String cmd) async {
-    stdout.write(cmd);
-    stdout.write('\n');
-    if (cmd == 'test') {
+    final argv =
+      cmd.split(RegExp(r' +', caseSensitive: false));
+    argv.removeWhere((String v) => v =='');
+    if (argv.isEmpty) { return; }
+    print('\n$cmd');
+
+    if (argv[0] == 'exit') {
+      if (cmd != 'exit') {
+        print('Please use \'exit\' command without space and arguments');
+      }
+    }
+    else if (argv[0] == 'login') {
+      if (argv.length != 3) {
+        print('Usage: \'login ID PASSWORD\''); return;
+      }
+      EsClientSess.doLogin(argv[1], argv[2]);
+    }
+    else if (argv[0] == 'logout') {
+      print('not implemented now');
+    }
+    else if (argv[0] == 'get') {
+      if (argv.length == 3 || argv.length == 2) {
+        if (argv[1] == 'course') {
+          EsClientSess.getCourse(argv.length == 3 ? argv[2] : '');
+          return;
+        }
+        else if (argv[1] == 'myinfo') {
+          print('not implemented now');
+          return;
+        }
+      }
+      print('Usage: \'get course\'');
+      print('       \'get course key=value[&key=value ...]\'');
+      print('       \'get myinfo\'');
+    }
+    else if (argv[0] == 'test') {
       try {
+        String path = "/";
+        Map<String, String> qParams = {'12가12' : '23나23'};
+        if (argv.length >= 2) { path = argv[1]; }
+        if (argv.length >= 4) {
+          qParams[argv[2]] = argv[3];
+        }
+        if (argv.length >= 6) {
+          qParams[argv[4]] = argv[5];
+        }
         final HttpClientResponse response =
-          await handleHttp("GET", "/", timeoutNetwork);
-        final String content = await utf8.decoder.bind(response).join();
-        print(content);
+          await handleHttp(
+            "GET",
+            path,
+            queryParameters: qParams,
+            timeoutD: timeoutNetwork
+          );
+        if (response.statusCode == HttpStatus.ok) {
+          final String content = await utf8.decoder.bind(response).join();
+          print(content);
+        }
+        else {
+          print('Response Status Code (${response.statusCode})');
+        }
       }
       catch (e) {
-        print('Error on "handleHttp" ($e)');
+        print('Error on "handleHttp" or decoder error ($e)');
       }
+    }
+    else {
+      //CASE OF: unsupported command
+      print('Error: unsupported command (${argv[0]})');
     }
   }
 
@@ -191,20 +251,22 @@ class EsClient {
   //  or 'method' is invalid,
   //  this throws 'Exception(...)'.
   static Future<HttpClientResponse> handleHttp(
-    final String method,
-    final String uri,
-    [final Duration timeoutD = const Duration(days: 365)]
+    String method,
+    final String path,
+    { Map<String, String>? queryParameters,
+    String? jsonString,
+    final Map<String, Object> cookiesMap = const {},
+    final Duration timeoutD = const Duration(days: 365) }
   ) async {
     if (_httpClient == null) {
       throw Exception("EsClient._httpClient is null");
     }
     final HttpClient httpClient = _httpClient as HttpClient;
-    var methodFunc = httpClient.get;
     switch (method) {
-      case "GET": break;
-      case "PUT": methodFunc = httpClient.put; break;
-      case "POST": methodFunc = httpClient.post; break;
-      case "DELETE": methodFunc = httpClient.delete; break;
+      case "GET": case "READ": method = "GET"; jsonString = null; break;
+      case "PUT": case "UPDATE": method = "PUT"; break;
+      case "POST": case "CREATE": method = "POST"; break;
+      case "DELETE": break;
       default:
         //CASE OF: wrong "method" value.
         throw Exception("unsupported http method, ($method)");
@@ -228,13 +290,35 @@ class EsClient {
 
       //httpRequest
       final dynamic httpRequest = await Future.any<dynamic>([
-        methodFunc(_serverIp, _serverPort, uri),
+        httpClient.openUrl(method, Uri(
+          scheme: 'http',
+          host: serverIp,
+          port: serverPort,
+          path: path,
+          queryParameters: queryParameters
+        )),
         fTimeout
       ]);
+      //put content
+      if (jsonString != null) {
+        final utf8List = utf8.encode(jsonString);
+        (httpRequest as HttpClientRequest)
+          ..headers.contentType = ContentType.json
+          ..headers.contentLength = utf8List.length
+          ..add(utf8List);
+      }
+      //put cookies
+      final List<Cookie> cookies =
+        (httpRequest as HttpClientRequest).cookies;
+      for (var entry in cookiesMap.entries) {
+        cookies.add(Cookie(entry.key, entry.value.toString()));
+      }
+      //close request
       final dynamic httpResponse = await Future.any<dynamic>([
-        (httpRequest as HttpClientRequest).close(),
+        httpRequest.close(),
         fTimeout
       ]);
+      //complete
       c.complete();
       return httpResponse as HttpClientResponse;
     }
@@ -246,7 +330,9 @@ class EsClient {
 
 
   //constructor
-  EsClient() { ; }
+  EsClient() {
+    //nothing now
+  }
 }
 
 
