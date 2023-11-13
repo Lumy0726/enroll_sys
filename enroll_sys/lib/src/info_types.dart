@@ -93,11 +93,11 @@ class CourseTimeInfo {
     value = CourseTimeInfo.format2Value(
       day, startHour, startMin, endHour, endMin);
   }
-  int get day => return CourseTimeInfo.value2Day(value);
-  int get startHour => return CourseTimeInfo.value2StartHour(value);
-  int get startMin => return CourseTimeInfo.value2startMin(value);
-  int get endHour => return CourseTimeInfo.value2endHour(value);
-  int get endMin => return CourseTimeInfo.value2endMin(value);
+  int get day => CourseTimeInfo.value2Day(value);
+  int get startHour => CourseTimeInfo.value2StartHour(value);
+  int get startMin =>  CourseTimeInfo.value2StartMin(value);
+  int get endHour => CourseTimeInfo.value2EndHour(value);
+  int get endMin => CourseTimeInfo.value2EndMin(value);
 }
 
 ///'CourseInfo' class
