@@ -60,7 +60,7 @@ class EsServerSess {
     }
     final List<String> pathSegs = request.uri.pathSegments;
     final Map<String, String> qParams = request.uri.queryParameters;
-    final bool isPathLogout = pathSegs.length == 1 && pathSegs[0] == 'logout';
+    final bool isPathLogin = pathSegs.length == 1 && pathSegs[0] == 'login';
 
     //check login session
     String loginId = '';
@@ -68,7 +68,7 @@ class EsServerSess {
     try {
       Cookie cookie = request.cookies.firstWhere((c) => c.name == 'token');
       loginToken = cookie.value;
-      if (!isPathLogout) {
+      if (!isPathLogin) {
         String? ret = EsServerSess.checkSession(loginToken);
         if (ret == null) {
           jsonStringRet.add(jsonEncode({
@@ -94,11 +94,7 @@ class EsServerSess {
       return HttpStatus.ok;
     }
     else if (pathSegs.length == 1 && pathSegs[0] == 'login') {
-      return await phrLogin(request, jsonStringRet, qParams);
-    }
-    else if (isPathLogout) {
-      return await phrLogout(
-        request, jsonStringRet, qParams, loginToken);
+      return await phrLogin(request, jsonStringRet, qParams, loginToken);
     }
     else if (pathSegs.length == 1 && pathSegs[0] == 'courses') {
       return await phrCourses(request, jsonStringRet, qParams, loginId);
@@ -110,65 +106,23 @@ class EsServerSess {
     return HttpStatus.notFound;
   }
   //'phrLogin' (Process Http Request /login) function.
+  //Action is login or logout.
   //See also 'processHttpRequest' too.
   static Future<int> phrLogin(
-    final HttpRequest request,
-    final List<String> jsonStringRet,
-    final Map<String, String> qParams
-  ) async {
-    //request check
-    if (qParams.isNotEmpty) {
-      const String reason = 'Invalid rq: \'login\' request with qParams';
-      print(reason);
-      jsonStringRet.add(jsonEncode({'reason': reason}));
-      return HttpStatus.badRequest;
-    }
-    if (request.method != "PUT") {
-      const String reason = 'Invalid rq: \'login\' request only accepts '
-        'PUT (UPDATE)';
-      print(reason);
-      jsonStringRet.add(jsonEncode({'reason': reason}));
-      return HttpStatus.methodNotAllowed;
-    }
-    final dynamic rObjDyn = await utf8StreamList2JsonObj(request);
-    if (!isMapStr(rObjDyn)) {
-      print('Invalid rq: \'login\' request, '
-        'json request is corrupted');
-      throw FormatException('json request is corrupted');
-    }
-    final loginInfo = rObjDyn as Map<String, dynamic>;
-
-    //EsServerSess.doLogin
-    final Map<String, String> loginResult = EsServerSess.doLogin(
-      loginInfo['id'] ?? '',
-      loginInfo['pw'] ?? ''
-    );
-    jsonStringRet.add(jsonEncode(loginResult));
-    return HttpStatus.ok;
-  }
-  //'phrLogout' (Process Http Request /logout) function.
-  //See also 'processHttpRequest' too.
-  static Future<int> phrLogout(
     final HttpRequest request,
     final List<String> jsonStringRet,
     final Map<String, String> qParams,
     final String loginToken
   ) async {
     //request check
-    if (loginToken == '') {
-      const String reason = 'Invalid rq: \'logout\' request needs login';
-      print(reason);
-      jsonStringRet.add(jsonEncode({'reason': reason}));
-      return HttpStatus.unauthorized;
-    }
     if (qParams.isNotEmpty) {
-      const String reason = 'Invalid rq: \'logout\' request with qParams';
+      const String reason = 'Invalid rq: \'/login\' request with qParams';
       print(reason);
       jsonStringRet.add(jsonEncode({'reason': reason}));
       return HttpStatus.badRequest;
     }
     if (request.method != "PUT") {
-      const String reason = 'Invalid rq: \'logout\' request only accepts '
+      const String reason = 'Invalid rq: \'/login\' request only accepts '
         'PUT (UPDATE)';
       print(reason);
       jsonStringRet.add(jsonEncode({'reason': reason}));
@@ -176,18 +130,42 @@ class EsServerSess {
     }
     final dynamic rObjDyn = await utf8StreamList2JsonObj(request);
     if (!isMapStr(rObjDyn)) {
-      print('Invalid rq: \'logout\' request, '
+      print('Invalid rq: \'/login\' request, '
         'json request is corrupted');
       throw FormatException('json request is corrupted');
     }
+    final requestInfo = rObjDyn as Map<String, dynamic>;
 
-    //EsServerSess.doLogout
-    final Map<String, String> loginResult = EsServerSess.doLogout(
-      rObjDyn['id'] ?? '',
-      loginToken
-    );
-    jsonStringRet.add(jsonEncode(loginResult));
-    return HttpStatus.ok;
+    //action (login or logout) check and do (login or logout)
+    if (requestInfo['action'] == 'login') {
+      //CASE OF: login action
+      final Map<String, String> loginResult = doLogin(
+        requestInfo['id'] ?? '',
+        requestInfo['pw'] ?? ''
+      );
+      jsonStringRet.add(jsonEncode(loginResult));
+      return HttpStatus.ok;
+    }
+    else if (requestInfo['action'] == 'logout') {
+      //CASE OF: logout action
+      if (loginToken == '') {
+        const String reason = 'Invalid rq: \'/login\' with logout '
+          'action request, needs login token';
+        print(reason);
+        jsonStringRet.add(jsonEncode({'reason': reason}));
+        return HttpStatus.unauthorized;
+      }
+      final Map<String, String> loginResult = doLogout(
+        rObjDyn['id'] ?? '',
+        loginToken
+      );
+      jsonStringRet.add(jsonEncode(loginResult));
+      return HttpStatus.ok;
+    }
+    //CASE OF: 'requestInfo['action']' is not login or logout
+    print('Invalid rq: \'/login\' request, '
+      'json request is corrupted');
+    throw FormatException('json request is corrupted');
   }
   //'phrCourses' (Process Http Request /courses) function.
   //See also 'processHttpRequest' too.

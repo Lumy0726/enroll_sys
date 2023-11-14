@@ -1,25 +1,38 @@
 
-///'UserInfo' class
-///Contains user information, id, password(hashed), list of enrolled courses
+///'UserInfo' class.
+///Contains user information, id, password(hashed), list of enrolled courses,
+///and other things.
 class UserInfo {
   String id;
+  String idDecimal;
   String hashedPw;
+  List<String> enrollList = [];
   UserInfo(
     final String idParam,
+    final String idDecimalParam,
     final String hashedPwParam
   ) :
     id = idParam,
+    idDecimal = idDecimalParam,
     hashedPw = hashedPwParam;
 
   //json conversion
 
   UserInfo.fromJson(final Map<String, dynamic> json) :
     id = json['id'],
-    hashedPw = json['hashedPw'];
+    idDecimal = json['idDecimal'],
+    hashedPw = json['hashedPw']
+  {
+    for (dynamic value in (json['enrollList'] as List)) {
+      enrollList.add(value);
+    }
+  }
   Map<String, dynamic> toJson() =>
   {
     'id': id,
+    'idDecimal': idDecimal,
     'hashedPw': hashedPw,
+    'enrollList': enrollList,
   };
 }
 
@@ -118,10 +131,8 @@ class CourseInfo {
     locationStr = json['locationStr'],
     etc = json['etc']
   {
-    if (json['infoTimes'] is List) {
-      for (dynamic value in json['infoTimes']) {
-        infoTimes.add(CourseTimeInfo.fromJson(value));
-      }
+    for (dynamic value in (json['infoTimes'] as List)) {
+      infoTimes.add(CourseTimeInfo.fromJson(value));
     }
   }
   Map<String, dynamic> toJson() =>

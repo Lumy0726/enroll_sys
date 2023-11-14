@@ -25,8 +25,16 @@ class EsServerMain {
     CourseInfo tInfo = CourseInfo('');
     //
     for (int i = 0; i < 5; i++) {
-      userInfoMap['user$i'] = UserInfo('user$i', pwHash('user$i'));
+      userInfoMap['user$i'] = UserInfo(
+        'user$i',
+        '230000111$i',
+        pwHash('user$i')
+      );
     }
+    //
+    userInfoMap['user1']?.enrollList.add('course1111');
+    userInfoMap['user1']?.enrollList.add('course3333');
+    userInfoMap['user2']?.enrollList.add('course2222');
     //
     tInfo = CourseInfo('course1111');
     tInfo.infoTimes.add(CourseTimeInfo(CourseTimeInfo.format2Value(

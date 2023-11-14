@@ -57,6 +57,7 @@ class EsClientSess {
         'UPDATE',
         '/login',
         jsonString: jsonEncode({
+          'action': 'login',
           'id': idParam,
           'pw': pwHash(pwParam),
         }),
@@ -114,8 +115,9 @@ class EsClientSess {
       //logout request
       final HttpClientResponse response = await EsClient.handleHttp(
         'UPDATE',
-        '/logout',
+        '/login',
         jsonString: jsonEncode({
+          'action': 'logout',
           'id': loginId,
           //'pw': pwHash(pwParam),
         }),
