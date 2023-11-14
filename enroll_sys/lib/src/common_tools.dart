@@ -6,6 +6,57 @@ import 'package:crypto/crypto.dart';
 import 'dart:async';
 import 'dart:convert';
 
+//class 'CancelableDelayed'
+//This is similar with 'Future.delayed',
+//  but the 'Future' object can be accessed using '.future',
+//  and '.cancel()' function cancels the desired computation.
+//NOTE:
+//  The '.future' will be completed with error,
+//    with type 'String', with value 'canceled',
+//    if desired computation is canceled.
+class CancelableDelayed<T> {
+  late Timer _timer;
+  final FutureOr<T> Function() _compu;
+  final Completer<T> _compl = Completer<T>();
+  //
+  Future<T> get future => _compl.future;
+  //constructor. Similar with 'Future.delayed'
+  CancelableDelayed(
+    final Duration duration,
+    final FutureOr<T> Function() computation
+  ) :
+    _compu = computation
+  {
+    _timer = Timer(duration, onTimer);
+  }
+  //'onTimer' function.
+  //This function will be called later automatically, using 'Timer'.
+  //But it is able to call this function manually.
+  //Multiple calls of this function is safe.
+  //  (after future completes, function do no-operation).
+  void onTimer() {
+    if (_compl.isCompleted) { return; }
+    try {
+      FutureOr<T> value = _compu();
+      _compl.complete(value);
+    }
+    catch (e, st) {
+      _compl.completeError(e, st);
+    }
+  }
+  //'cancel' function.
+  //Cancel the desired computation.
+  //Multiple calls of this function is safe.
+  //If desired computation isn't executed before,
+  //  the '.future' will be completed with error,
+  //  with type 'String', with value 'canceled',
+  void cancel() {
+    _timer.cancel();
+    if (_compl.isCompleted) { return; }
+    _compl.completeError('canceled');
+  }
+}
+
 //class 'BrdStreamWithCancel'.
 //
 //This class receives 'Stream<T>' in the constructor,

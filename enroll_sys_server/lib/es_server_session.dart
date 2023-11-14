@@ -24,7 +24,7 @@ class EsServerSess {
   //'sessDuration'. Default duration is 10 minutes.
   static Duration sessDuration = const Duration(minutes: 10);
   //'curSessions' - token and 'SessTime' class.
-  static Map<String, SessTime> _curSessions = {};
+  static final Map<String, SessTime> _curSessions = {};
 
   //
   static Map<String, String> doLogin(

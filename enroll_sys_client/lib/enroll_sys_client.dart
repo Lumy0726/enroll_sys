@@ -273,9 +273,10 @@ class EsClient {
     }
 
     //make timeout Future
-    final Future<void> fTimeout = Future<void>.delayed(timeoutD, () {
+    final cDelayed = CancelableDelayed<void>(timeoutD, () {
       throw TimeoutException("EsClient.handleHttp timeout");
     });
+    final Future<void> fTimeout = cDelayed.future;
     //to prevent unhandled exception of the timeout Future
     fTimeout.catchError((obj) { return; });
 
@@ -320,10 +321,12 @@ class EsClient {
       ]);
       //complete
       c.complete();
+      cDelayed.cancel();//cancel timeout future.
       return httpResponse as HttpClientResponse;
     }
     catch (e) {
       c.complete();
+      cDelayed.cancel();//cancel timeout future.
       rethrow;
     }
   }
