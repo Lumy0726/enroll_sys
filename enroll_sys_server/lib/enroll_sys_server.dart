@@ -11,7 +11,6 @@ import 'dart:convert';
 //handles stdin input (like 'exit' command).
 //handles http(s) connections
 //handles basic http request parsing like check 'path'
-//handles basic server operations
 //
 class EsServer {
   //timeout value for general function,
@@ -273,10 +272,11 @@ class EsServer {
     int statusCode = 0;
     //processing
     try {
-      statusCode = await processHttpRequest(request, jsonStringRet);
+      statusCode = await
+        EsServerSess.processHttpRequest(request, jsonStringRet);
     }
     catch (e) {
-      print('Error on \'processHttpRequest\', ($e)');
+      print('Error on \'EsServerSess.processHttpRequest\', ($e)');
       statusCode = HttpStatus.internalServerError;
     }
     //send response
@@ -291,114 +291,6 @@ class EsServer {
     }
     await closeHttpResponse(request);
     return statusCode;
-  }
-  //'processHttpRequest' function
-  //return value should be http status code.
-  //'jsonStringRet' should be empty when call this function.
-  //'jsonStringRet' params '.first' would be json string for responce,
-  //  or 'jsonStringRet.isEmpty' is true.
-  static Future<int> processHttpRequest(
-    final HttpRequest request,
-    final List<String> jsonStringRet
-  ) async {
-    //check&print information of request
-    final cInfo = request.connectionInfo;
-    print('http request from '
-      '${cInfo?.remoteAddress.address}'
-      ':${cInfo?.remotePort}');
-    print('  URI: ${request.uri}');
-    print('  METHOD: ${request.method}');
-    if (request.method != "GET" &&
-      request.method != "POST" &&
-      request.method != "PUT" &&
-      request.method != "DELETE"
-    ) {
-      print('unsupported request method ${request.method}');
-      return HttpStatus.badRequest;
-    }
-    final List<String> pathSegs = request.uri.pathSegments;
-    final Map<String, String> qParams = request.uri.queryParameters;
-
-    //path check
-    if (pathSegs.isNotEmpty && pathSegs[0] == 'test') {
-      jsonStringRet.add(jsonEncode([pathSegs, qParams]));
-      return HttpStatus.ok;
-    }
-    else if (pathSegs.length == 1 && pathSegs[0] == 'login') {
-      return await phrLogin(request, jsonStringRet, qParams);
-    }
-    else if (pathSegs.length == 1 && pathSegs[0] == 'courses') {
-      return await phrCourses(request, jsonStringRet, qParams);
-    }
-
-    //unknown request.
-    print('unknown request path');
-    return HttpStatus.notFound;
-  }
-  //'phrLogin' (Process Http Request /login) function.
-  //See also 'processHttpRequest' too.
-  static Future<int> phrLogin(
-    final HttpRequest request,
-    final List<String> jsonStringRet,
-    final Map<String, String> qParams
-  ) async {
-    //request check
-    if (qParams.isNotEmpty) {
-      print('Invalid rq: \'login\' request with qParams');
-      return HttpStatus.badRequest;
-    }
-    if (request.method != "PUT") {
-      print('Invalid rq: \'login\' request only accepts '
-        'PUT (UPDATE)');
-      return HttpStatus.badRequest;
-    }
-    final String jsonStr = await utf8.decoder.bind(request).join();
-    final dynamic rObjDyn = jsonDecode(jsonStr);
-    if (!isMapStr(rObjDyn)) {
-      print('Invalid rq: \'login\' request, '
-        'json response is corrupted');
-      throw FormatException('json response is corrupted');
-    }
-    final loginInfo = rObjDyn as Map<String, dynamic>;
-
-    //EsServerSess.doLogin
-    final Map<String, String> loginResult = EsServerSess.doLogin(
-      loginInfo['id'] ?? '',
-      loginInfo['pw'] ?? ''
-    );
-    jsonStringRet.add(jsonEncode(loginResult));
-    return HttpStatus.ok;
-  }
-  //'phrCourses' (Process Http Request /courses) function.
-  //See also 'processHttpRequest' too.
-  static Future<int> phrCourses(
-    final HttpRequest request,
-    final List<String> jsonStringRet,
-    final Map<String, String> qParams
-  ) async {
-    //request check
-    if (request.method != "GET") {
-      print('Invalid rq: \'courses\' request only accepts '
-        'GET (READ)');
-      return HttpStatus.badRequest;
-    }
-    try {
-      Cookie cookie = request.cookies.firstWhere((c) => c.name == 'token');
-      if (!(EsServerSess.checkSession(cookie.value))) {
-        //CASE OF: no session available.
-        jsonStringRet.add(jsonEncode({'reason' : 'no session available'}));
-        return HttpStatus.forbidden;
-      }
-    }
-    on StateError catch (e) {
-      print('Invalid rq: \'courses\' but no token in cookie, ($e)');
-      return HttpStatus.badRequest;
-    }
-
-    //response
-    //TODO need to implement below
-    jsonStringRet.add(jsonEncode(EsServerMain.courseInfoMap));
-    return HttpStatus.ok;
   }
 
 

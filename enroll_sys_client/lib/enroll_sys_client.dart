@@ -9,7 +9,6 @@ import 'dart:convert';
 //Client program's entry point
 //handles user input (stdin for now)
 //handles http(s) connections
-//handles basic client operations
 //
 //NOTE: Due to UI handling,
 //  all of the function in this class,
@@ -113,7 +112,10 @@ class EsClient {
       EsClientSess.doLogin(argv[1], argv[2]);
     }
     else if (argv[0] == 'logout') {
-      print('not implemented now');
+      if (argv.length != 1) {
+        print('Usage: \'logout\''); return;
+      }
+      EsClientSess.doLogout();
     }
     else if (argv[0] == 'get') {
       if (argv.length == 3 || argv.length == 2) {
@@ -148,13 +150,9 @@ class EsClient {
             queryParameters: qParams,
             timeoutD: timeoutNetwork
           );
-        if (response.statusCode == HttpStatus.ok) {
-          final String content = await utf8.decoder.bind(response).join();
-          print(content);
-        }
-        else {
-          print('Response Status Code (${response.statusCode})');
-        }
+        print('Response Status Code (${response.statusCode})');
+        final String content = await utf8.decoder.bind(response).join();
+        print('  ($content)');
       }
       catch (e) {
         print('Error on "handleHttp" or decoder error ($e)');
@@ -300,19 +298,19 @@ class EsClient {
         )),
         fTimeout
       ]);
-      //put content
-      if (jsonString != null) {
-        final utf8List = utf8.encode(jsonString);
-        (httpRequest as HttpClientRequest)
-          ..headers.contentType = ContentType.json
-          ..headers.contentLength = utf8List.length
-          ..add(utf8List);
-      }
       //put cookies
       final List<Cookie> cookies =
         (httpRequest as HttpClientRequest).cookies;
       for (var entry in cookiesMap.entries) {
         cookies.add(Cookie(entry.key, entry.value.toString()));
+      }
+      //put content
+      if (jsonString != null) {
+        final utf8List = utf8.encode(jsonString);
+        httpRequest
+          ..headers.contentType = ContentType.json
+          ..headers.contentLength = utf8List.length
+          ..add(utf8List);
       }
       //close request
       final dynamic httpResponse = await Future.any<dynamic>([

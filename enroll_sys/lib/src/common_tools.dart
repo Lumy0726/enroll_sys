@@ -6,6 +6,15 @@ import 'package:crypto/crypto.dart';
 import 'dart:async';
 import 'dart:convert';
 
+//Converts 'Stream<List<int>>' to String (with utf8 format),
+//and converts to 'dynamic' with json format.
+//Exception can be thrown.
+//Common use case is converting 'HttpRequest' or 'HttpClientRequest'
+Future<dynamic> utf8StreamList2JsonObj(final Stream<List<int>> stream) async {
+  final String jsonStr = await utf8.decoder.bind(stream).join();
+  return jsonDecode(jsonStr);
+}
+
 //class 'CancelableDelayed'
 //This is similar with 'Future.delayed',
 //  but the 'Future' object can be accessed using '.future',

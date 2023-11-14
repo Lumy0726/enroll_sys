@@ -20,11 +20,203 @@ class SessTime {
 }
 
 //'EsServerSess' class (Enrollment System Server Login Session)
+//Actual processing of http request is here,
+//  using 'EsServerSess.processHttpRequest(...)',
+//  which is called by code in 'EsServer.onHttpRequest(...)'.
 class EsServerSess {
   //'sessDuration'. Default duration is 10 minutes.
   static Duration sessDuration = const Duration(minutes: 10);
   //'curSessions' - token and 'SessTime' class.
   static final Map<String, SessTime> _curSessions = {};
+
+  //'processHttpRequest' function
+  //return value of the 'Future' should be http status code.
+  //'jsonStringRet' should be empty when call this function.
+  //'jsonStringRet' params '.first' would be json string for response,
+  //  or 'jsonStringRet.isEmpty' is true.
+  //If this function throws error,
+  //  that will be handled in 'EsServer.onHttpRequest(...)',
+  //  with response 'HttpStatus.internalServerError'.
+  static Future<int> processHttpRequest(
+    final HttpRequest request,
+    final List<String> jsonStringRet
+  ) async {
+    //check&print information of request
+    final cInfo = request.connectionInfo;
+    print('http request from '
+      '${cInfo?.remoteAddress.address}'
+      ':${cInfo?.remotePort}');
+    print('  URI: ${request.uri}');
+    print('  METHOD: ${request.method}');
+    if (request.method != "GET" &&
+      request.method != "POST" &&
+      request.method != "PUT" &&
+      request.method != "DELETE"
+    ) {
+      final String reason = 'unsupported request method ${request.method}';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.methodNotAllowed;
+    }
+    final List<String> pathSegs = request.uri.pathSegments;
+    final Map<String, String> qParams = request.uri.queryParameters;
+    final bool isPathLogout = pathSegs.length == 1 && pathSegs[0] == 'logout';
+
+    //check login session
+    String loginId = '';
+    String loginToken = '';
+    try {
+      Cookie cookie = request.cookies.firstWhere((c) => c.name == 'token');
+      loginToken = cookie.value;
+      if (!isPathLogout) {
+        String? ret = EsServerSess.checkSession(loginToken);
+        if (ret == null) {
+          jsonStringRet.add(jsonEncode({
+            'reason' : 'Invalid login session'}));
+          return HttpStatus.unauthorized;
+        }
+        else if (ret == '') {
+          jsonStringRet.add(jsonEncode({
+            'reason' : 'Login session timeout'}));
+          return HttpStatus.unauthorized;
+        }
+        loginId = ret;
+      }
+    }
+    on StateError {
+      //CASE OF: no token in cookie
+      //nothing here, keep (loginId=='')
+    }
+
+    //path check
+    if (pathSegs.isNotEmpty && pathSegs[0] == 'test') {
+      jsonStringRet.add(jsonEncode([pathSegs, qParams]));
+      return HttpStatus.ok;
+    }
+    else if (pathSegs.length == 1 && pathSegs[0] == 'login') {
+      return await phrLogin(request, jsonStringRet, qParams);
+    }
+    else if (isPathLogout) {
+      return await phrLogout(
+        request, jsonStringRet, qParams, loginToken);
+    }
+    else if (pathSegs.length == 1 && pathSegs[0] == 'courses') {
+      return await phrCourses(request, jsonStringRet, qParams, loginId);
+    }
+
+    //unknown request.
+    print('unknown request path');
+    jsonStringRet.add(jsonEncode({'reason': 'unknown request path'}));
+    return HttpStatus.notFound;
+  }
+  //'phrLogin' (Process Http Request /login) function.
+  //See also 'processHttpRequest' too.
+  static Future<int> phrLogin(
+    final HttpRequest request,
+    final List<String> jsonStringRet,
+    final Map<String, String> qParams
+  ) async {
+    //request check
+    if (qParams.isNotEmpty) {
+      const String reason = 'Invalid rq: \'login\' request with qParams';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.badRequest;
+    }
+    if (request.method != "PUT") {
+      const String reason = 'Invalid rq: \'login\' request only accepts '
+        'PUT (UPDATE)';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.methodNotAllowed;
+    }
+    final dynamic rObjDyn = await utf8StreamList2JsonObj(request);
+    if (!isMapStr(rObjDyn)) {
+      print('Invalid rq: \'login\' request, '
+        'json request is corrupted');
+      throw FormatException('json request is corrupted');
+    }
+    final loginInfo = rObjDyn as Map<String, dynamic>;
+
+    //EsServerSess.doLogin
+    final Map<String, String> loginResult = EsServerSess.doLogin(
+      loginInfo['id'] ?? '',
+      loginInfo['pw'] ?? ''
+    );
+    jsonStringRet.add(jsonEncode(loginResult));
+    return HttpStatus.ok;
+  }
+  //'phrLogout' (Process Http Request /logout) function.
+  //See also 'processHttpRequest' too.
+  static Future<int> phrLogout(
+    final HttpRequest request,
+    final List<String> jsonStringRet,
+    final Map<String, String> qParams,
+    final String loginToken
+  ) async {
+    //request check
+    if (loginToken == '') {
+      const String reason = 'Invalid rq: \'logout\' request needs login';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.unauthorized;
+    }
+    if (qParams.isNotEmpty) {
+      const String reason = 'Invalid rq: \'logout\' request with qParams';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.badRequest;
+    }
+    if (request.method != "PUT") {
+      const String reason = 'Invalid rq: \'logout\' request only accepts '
+        'PUT (UPDATE)';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.methodNotAllowed;
+    }
+    final dynamic rObjDyn = await utf8StreamList2JsonObj(request);
+    if (!isMapStr(rObjDyn)) {
+      print('Invalid rq: \'logout\' request, '
+        'json request is corrupted');
+      throw FormatException('json request is corrupted');
+    }
+
+    //EsServerSess.doLogout
+    final Map<String, String> loginResult = EsServerSess.doLogout(
+      rObjDyn['id'] ?? '',
+      loginToken
+    );
+    jsonStringRet.add(jsonEncode(loginResult));
+    return HttpStatus.ok;
+  }
+  //'phrCourses' (Process Http Request /courses) function.
+  //See also 'processHttpRequest' too.
+  static Future<int> phrCourses(
+    final HttpRequest request,
+    final List<String> jsonStringRet,
+    final Map<String, String> qParams,
+    final String loginId
+  ) async {
+    //request check
+    if (request.method != "GET") {
+      const String reason = 'Invalid rq: \'courses\' request only accepts '
+        'GET (READ)';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.methodNotAllowed;
+    }
+    if (loginId == '') {
+      const String reason = 'Invalid rq: \'courses\' request needs login';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.unauthorized;
+    }
+
+    //response
+    //TODO need to implement below
+    jsonStringRet.add(jsonEncode(EsServerMain.courseInfoMap));
+    return HttpStatus.ok;
+  }
 
   //
   static Map<String, String> doLogin(
@@ -50,16 +242,43 @@ class EsServerSess {
     //return
     return ret;
   }
-
   //
-  static bool checkSession(final String token) {
+  static Map<String, String> doLogout(
+    final String requestedId,
+    final String token
+  ) {
+    Map<String, String> ret = {};//would be return value
     final SessTime? sessTime = _curSessions[token];
+    if (sessTime == null) {
+      ret['result'] = 'true';
+      ret['resultStr'] = 'Already logout-ed or invalid token';
+      return ret;
+    }
+    if (sessTime.id != requestedId) {
+      const String reason = 'Invalid rq: current login id and'
+        'requested logout id is different';
+      ret['result'] = 'false';
+      ret['resultStr'] = reason;
+      return ret;
+    }
+    _curSessions.remove(token);
+    ret['result'] = 'true';
+    ret['resultStr'] = 'Logout complete';
+    return ret;
+  }
+
+  //Check token's session and update session end time.
+  //return value is null, for wrong token or no session.
+  //return value is empty string, for session timeout.
+  static String? checkSession(final String token) {
+    final SessTime? sessTime = _curSessions[token];
+    if (sessTime == null) { return null; }
     DateTime dateTime = DateTime.now();
-    if (sessTime == null || sessTime.endTime.isBefore(dateTime)) {
-      return false;
+    if (sessTime.endTime.isBefore(dateTime)) {
+      return '';
     }
     sessTime.endTime = dateTime.add(sessDuration);
-    return true;
+    return sessTime.id;
   }
 
   //constructor

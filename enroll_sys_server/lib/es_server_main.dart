@@ -7,10 +7,12 @@ import 'dart:async';
 import 'dart:convert';
 
 
-///'EsServerMain' class (Enrollment System Server Main program)
-///this holds major data of server, like user information, course list
+///'EsServerMain' class (Enrollment System Server Main program).
+///
+///this holds major data of server, like user information, course list.
+///
 ///this handles major operations of server,
-///  likes searching courses or handling enrollment request
+///likes searching courses or handling enrollment request.
 class EsServerMain {
   static Map<String, UserInfo> userInfoMap = {};
   static Map<String, CourseInfo> courseInfoMap = {};
