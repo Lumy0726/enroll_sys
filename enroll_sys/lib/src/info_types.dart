@@ -15,6 +15,15 @@ class UserInfo {
     id = idParam,
     idDecimal = idDecimalParam,
     hashedPw = hashedPwParam;
+  UserInfo.clone(
+    final UserInfo obj
+  ) :
+    id = obj.id,
+    idDecimal = obj.idDecimal,
+    hashedPw = obj.hashedPw
+  {
+    enrollList = List<String>.from(obj.enrollList);
+  }
 
   //json conversion
 
@@ -116,6 +125,7 @@ class CourseTimeInfo {
 ///'CourseInfo' class
 class CourseInfo {
   String id;
+  String courseName = '';
   List<CourseTimeInfo> infoTimes = [];
   String proName = '';
   String locationStr = '';
@@ -127,6 +137,7 @@ class CourseInfo {
 
   CourseInfo.fromJson(final Map<String, dynamic> json) :
     id = json['id'],
+    courseName = json['courseName'],
     proName = json['proName'],
     locationStr = json['locationStr'],
     etc = json['etc']
@@ -138,6 +149,7 @@ class CourseInfo {
   Map<String, dynamic> toJson() =>
   {
     'id': id,
+    'courseName': courseName,
     'infoTimes': infoTimes,
     'proName': proName,
     'locationStr': locationStr,

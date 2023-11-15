@@ -99,6 +99,13 @@ class EsServerSess {
     else if (pathSegs.length == 1 && pathSegs[0] == 'courses') {
       return await phrCourses(request, jsonStringRet, qParams, loginId);
     }
+    else if (
+      pathSegs.length == 2 &&
+      pathSegs[0] == 'students'
+    ) {
+      return await phrStudentInfo(request, jsonStringRet, qParams,
+        loginId, pathSegs[1]);
+    }
 
     //unknown request.
     print('unknown request path');
@@ -195,6 +202,54 @@ class EsServerSess {
     jsonStringRet.add(jsonEncode(EsServerMain.courseInfoMap));
     return HttpStatus.ok;
   }
+  //'phrStudentInfo' (Process Http Request /student/requestedId) function.
+  //See also 'processHttpRequest' too.
+  static Future<int> phrStudentInfo(
+    final HttpRequest request,
+    final List<String> jsonStringRet,
+    final Map<String, String> qParams,
+    final String loginId,
+    final String requestedId
+  ) async {
+    //request check
+    if (request.method != "GET") {
+      const String reason = 'Invalid rq: \'/student/requestedId\' '
+        'request only accepts GET (READ)';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.methodNotAllowed;
+    }
+    if (loginId == '') {
+      const String reason = 'Invalid rq: \'/student/requestedId\' '
+        'request needs login';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.unauthorized;
+    }
+    if (loginId != requestedId) {
+      const String reason = 'Invalid rq: \'/student/requestedId\', '
+        'cannot get information of user, '
+        'with current login permission';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.unauthorized;
+    }
+
+    //response
+    UserInfo? userInfo = EsServerMain.stuInfoMap[requestedId];
+    if (userInfo == null) {
+      const String reason =
+        'Error on processing rq: \'/student/requestedId\', '
+        'user information deleted';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.notFound;
+    }
+    UserInfo userInfoClone = UserInfo.clone(userInfo);
+    userInfoClone.hashedPw = '';
+    jsonStringRet.add(jsonEncode(userInfoClone));
+    return HttpStatus.ok;
+  }
 
   //
   static Map<String, String> doLogin(
@@ -202,7 +257,7 @@ class EsServerSess {
     final String pwParam
   ) {
     Map<String, String> ret = {};//would be return value
-    UserInfo? userInfo = EsServerMain.userInfoMap[idParam];
+    UserInfo? userInfo = EsServerMain.stuInfoMap[idParam];
     if (userInfo == null || userInfo.hashedPw != pwParam) {
       ret['result'] = 'false';
       ret['resultStr'] = 'Incorrect UserId or Password';

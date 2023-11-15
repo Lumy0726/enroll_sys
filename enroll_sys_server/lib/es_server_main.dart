@@ -14,7 +14,7 @@ import 'dart:convert';
 ///this handles major operations of server,
 ///likes searching courses or handling enrollment request.
 class EsServerMain {
-  static Map<String, UserInfo> userInfoMap = {};
+  static Map<String, UserInfo> stuInfoMap = {};
   static Map<String, CourseInfo> courseInfoMap = {};
 
 
@@ -25,22 +25,23 @@ class EsServerMain {
     CourseInfo tInfo = CourseInfo('');
     //
     for (int i = 0; i < 5; i++) {
-      userInfoMap['user$i'] = UserInfo(
+      stuInfoMap['user$i'] = UserInfo(
         'user$i',
         '230000111$i',
         pwHash('user$i')
       );
     }
     //
-    userInfoMap['user1']?.enrollList.add('course1111');
-    userInfoMap['user1']?.enrollList.add('course3333');
-    userInfoMap['user2']?.enrollList.add('course2222');
+    stuInfoMap['user1']?.enrollList.add('course1111');
+    stuInfoMap['user1']?.enrollList.add('course3333');
+    stuInfoMap['user2']?.enrollList.add('course2222');
     //
     tInfo = CourseInfo('course1111');
     tInfo.infoTimes.add(CourseTimeInfo(CourseTimeInfo.format2Value(
       CourseTimeInfo.MON,
       10, 30, 11, 45
     )));
+    tInfo.courseName = 'course1111';
     tInfo.proName = '김교수';
     tInfo.locationStr = 'SomeLocation 103';
     tInfo.groupStr = 'department-A';
@@ -51,6 +52,7 @@ class EsServerMain {
       CourseTimeInfo.MON,
       10, 30, 11, 45
     )));
+    tInfo.courseName = 'course2222';
     tInfo.proName = 'professor2222';
     tInfo.locationStr = 'SomeLocation 205';
     tInfo.groupStr = 'department-B';
@@ -61,6 +63,7 @@ class EsServerMain {
       CourseTimeInfo.MON,
       10, 30, 11, 45
     )));
+    tInfo.courseName = 'course3333';
     tInfo.proName = 'professor3333';
     tInfo.locationStr = 'SomeLocation 109';
     tInfo.groupStr = 'department-C';
@@ -71,6 +74,7 @@ class EsServerMain {
       CourseTimeInfo.MON,
       10, 30, 11, 45
     )));
+    tInfo.courseName = 'course4444';
     tInfo.proName = 'professor4444';
     tInfo.locationStr = 'SomeLocation 110';
     tInfo.groupStr = 'department-A';
@@ -81,6 +85,7 @@ class EsServerMain {
       CourseTimeInfo.MON,
       10, 30, 11, 45
     )));
+    tInfo.courseName = 'course5555';
     tInfo.proName = 'professor5555';
     tInfo.locationStr = 'SomeLocation 301';
     tInfo.groupStr = 'department-B';

@@ -124,7 +124,7 @@ class EsClient {
           return;
         }
         else if (argv[1] == 'myinfo') {
-          print('not implemented now');
+          EsClientSess.getMyinfo();
           return;
         }
       }

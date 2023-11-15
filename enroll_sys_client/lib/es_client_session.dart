@@ -210,6 +210,38 @@ class EsClientSess {
     }
   }
 
+  //'getMyinfo' function.
+  //get current login-ed user information from server.
+  static Future<int> getMyinfo() async {
+    if (_conState != ST_LOGINED) {
+      print('Please login to get user information');
+      return 1;
+    }
+    try {
+      //get user information request
+      final HttpClientResponse response = await EsClient.handleHttp(
+        'GET',
+        '/students/$loginId',
+        cookiesMap: cookiesMap,
+        timeoutD: EsClient.timeoutNetwork
+      );
+      //check response
+      if (response.statusCode != HttpStatus.ok) {
+        print('Error while get user information request, '
+          'response code was (${response.statusCode})');
+        printErrorResponse(response);
+        return 2;
+      }
+      final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
+      print(rObjDyn);
+      return 0;
+    }
+    catch (e) {
+      print('Error while get user information request, ($e)');
+      return -1;
+    }
+  }
+
 
   //constructor
   EsClientSess() {
