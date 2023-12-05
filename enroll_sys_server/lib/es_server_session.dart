@@ -94,6 +94,7 @@ class EsServerSess {
       return HttpStatus.ok;
     }
     else if (pathSegs.length == 1 && pathSegs[0] == 'login') {
+      //login or logout
       return await phrLogin(request, jsonStringRet, qParams, loginToken);
     }
     else if (pathSegs.length == 1 && pathSegs[0] == 'courses') {
@@ -198,9 +199,16 @@ class EsServerSess {
     }
 
     //response
-    //TODO need to implement below
-    jsonStringRet.add(jsonEncode(EsServerMain.courseInfoMap));
-    return HttpStatus.ok;
+    List<Map<String, CourseInfo>> coursesInfoOut = [];
+    String result = EsServerMain.getCoursesInfo(qParams, coursesInfoOut);
+    if (coursesInfoOut.isNotEmpty) {
+      jsonStringRet.add(jsonEncode(coursesInfoOut.first));
+      return HttpStatus.ok;
+    }
+    else {
+      jsonStringRet.add(jsonEncode({'reason': result}));
+      return HttpStatus.badRequest;
+    }
   }
   //'phrStudentInfo' (Process Http Request /student/requestedId) function.
   //See also 'processHttpRequest' too.
@@ -236,8 +244,8 @@ class EsServerSess {
     }
 
     //response
-    UserInfo? userInfo = EsServerMain.stuInfoMap[requestedId];
-    if (userInfo == null) {
+    UserInfo? stuInfo = EsServerMain.getStuInfo(requestedId);
+    if (stuInfo == null) {
       const String reason =
         'Error on processing rq: \'/student/requestedId\', '
         'user information deleted';
@@ -245,9 +253,9 @@ class EsServerSess {
       jsonStringRet.add(jsonEncode({'reason': reason}));
       return HttpStatus.notFound;
     }
-    UserInfo userInfoClone = UserInfo.clone(userInfo);
-    userInfoClone.hashedPw = '';
-    jsonStringRet.add(jsonEncode(userInfoClone));
+    UserInfo stuInfoClone = UserInfo.clone(stuInfo);
+    stuInfoClone.hashedPw = '';
+    jsonStringRet.add(jsonEncode(stuInfoClone));
     return HttpStatus.ok;
   }
 
@@ -257,8 +265,8 @@ class EsServerSess {
     final String pwParam
   ) {
     Map<String, String> ret = {};//would be return value
-    UserInfo? userInfo = EsServerMain.stuInfoMap[idParam];
-    if (userInfo == null || userInfo.hashedPw != pwParam) {
+    UserInfo? stuInfo = EsServerMain.getStuInfo(idParam);
+    if (stuInfo == null || stuInfo.hashedPw != pwParam) {
       ret['result'] = 'false';
       ret['resultStr'] = 'Incorrect UserId or Password';
       return ret;

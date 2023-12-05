@@ -173,17 +173,28 @@ class EsClientSess {
     try {
       final Map<String, String> qParams = {};
       if (params.isNotEmpty) {
-        final List<String> argv = splitExceptEscaped(params, '&', '\\');
+        final List<String> argv = splitExceptEscaped(params, r'\', '&');
+        int idx = argv.length;
+        int decimalLength = 0; // decimal number length of 'argv.length'.
+        while (idx != 0) { decimalLength++; idx = idx ~/ 10; }
         for (var str in argv) {
-          List<String> keyAndValue = splitExceptEscaped(str, '=', '\\');
+          List<String> keyAndValue = splitExceptEscaped(str, r'\', '=');
           if (keyAndValue.length != 2) {
             print('wrong key=value pair, ($str)');
           }
           else {
-            qParams[keyAndValue[0]] = keyAndValue[1];
+            //NOTE: because 'qParams' is 'Map' type,
+            //  and program should keep all query params and order,
+            //  below code adds integer index to the key string.
+            qParams[
+              '${idx.toString().padLeft(decimalLength, '0')}.'
+              '${escapeStr(keyAndValue[0], r'\')}'
+            ] = escapeStr(keyAndValue[1], r'\');
+            idx++;
           }
         }
       }
+      print('qParams=(${qParams})');
       //get course request
       final HttpClientResponse response = await EsClient.handleHttp(
         'GET',
@@ -200,8 +211,7 @@ class EsClientSess {
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
-      //TODO need implement below
-      print(rObjDyn);
+      print(JsonEncoder.withIndent('  ').convert(rObjDyn));
       return 0;
     }
     catch (e) {

@@ -94,8 +94,7 @@ class EsClient {
   //  when the client is running.
   //  no need to handle 'exit' command at here.
   static Future<void> onStdinLine(String cmd) async {
-    final argv =
-      cmd.split(RegExp(r' +', caseSensitive: false));
+    final List<String> argv = splitExceptEscaped(cmd, r'\', ' ');
     argv.removeWhere((String v) => v =='');
     if (argv.isEmpty) { return; }
     print('\n$cmd');

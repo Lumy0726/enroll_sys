@@ -1,4 +1,143 @@
 
+///'SPCType'. 'SearchParam' class's Compare Type.
+///Equal, not equal, less than, greater than, less or equal, greater or equal,
+///  include, not include, regular expression, not regex.
+enum SPCType { eq, ne, lt, gt, le, ge, inc, ninc, regex, nregex, }
+
+///'SPQType'. 'SearchParam' class's Query type.
+///The way of add searching result.
+///Multiply (and operation), add (or operation),
+///  delayed multiply, delayed add.
+///ex) A add B mul C delayedAdd D mul E delayedMul F==>
+///  ( ((A or B) and C) or (D and E) ) and F.
+enum SPQType { mul, add, delayMul, delayAdd, }
+
+///'SearchParam' class.
+///Key-value data structure for searching objects.
+///And has other attributes like type,
+///  for continuous searching or comparison types etc.
+///
+///The 'keyParam',
+///  which has keyName and type attributes,
+///  and is argument of constructor and 'fromStringParam' function,
+///  has below format.
+///
+///  '${ignoreStr}${prefix}${keyName}${postfix}'.
+///
+///  'ignoreStr' can be empty String,
+///    or any string that ends with '.' but has no other '.'.
+///
+///  'prefix' can be '', '+', ')(', ')+('.
+///  Which is 'mul', 'add', 'delayMul', 'delayAdd' of 'SPQType' enum.
+///
+///  'postfix' can be ('' or '='), '!', '!>', '!<', '<', '>',
+///    '*', '!*', '~', '!~'.
+///  Which is 'eq', 'ne', 'lt', 'gt', 'le', 'ge',
+///    'inc', 'ninc', 'regex', 'nregex' of 'SPCType' enum.
+class SearchParam {
+  //'key'. This has only key name.
+  String key = '';
+  //'availableKeys'. Should be '[[:alnum:]]+'.
+  List<String> availableKeys = [];
+  //'value'
+  String value = '';
+  //'cType'
+  SPCType cType = SPCType.eq;
+  //'qType'
+  SPQType qType = SPQType.mul;
+
+  //constructor
+  SearchParam([final String keyParam = '', final String valueParam = '']) {
+    if (keyParam != '') { fromStringParam(keyParam, valueParam); }
+  }
+
+  ///'fromStringParam' function.
+  ///Converts 'key, value' String to 'SearchParam',
+  ///  and save results to this object.
+  ///Returned value will be result string,
+  ///  'complete' for success, error string for error.
+  ///For the error, 'this.key' will be empty string after this function.
+  String fromStringParam(String keyParam, final String valueParam) {
+    //parse 'keyParam'
+    int idxDot = keyParam.indexOf('.');
+    if (idxDot >= 0) { keyParam = keyParam.substring(idxDot + 1); }
+    final RegExpMatch? match =
+      RegExp(r'^(\W*)(\w*)(\W*)$')
+        .firstMatch(keyParam);
+    if (match == null) {
+      key = ''; return 'InvalidKeyFormat';
+    }
+    final String? prefix = match[1];
+    final String keyName = match[2] ?? '';
+    final String? postfix = match[3];
+    if (prefix == null || postfix == null) {
+      key = ''; return 'InvalidKeyFormat';
+    }
+    if (prefix == '') { qType = SPQType.mul; }
+    else if (prefix == '+') { qType = SPQType.add; }
+    else if (prefix == ')(') { qType = SPQType.delayMul; }
+    else if (prefix == ')+(') { qType = SPQType.delayAdd; }
+    else {
+      key = ''; return 'InvalidKeyFormat (wrong prefix)';
+    }
+    if (postfix == '') { cType = SPCType.eq; }
+    else if (postfix == '=') { cType = SPCType.eq; }
+    else if (postfix == '!') { cType = SPCType.ne; }
+    else if (postfix == '!>') { cType = SPCType.lt; }
+    else if (postfix == '!<') { cType = SPCType.gt; }
+    else if (postfix == '<') { cType = SPCType.le; }
+    else if (postfix == '>') { cType = SPCType.ge; }
+    else if (postfix == '*') { cType = SPCType.inc; }
+    else if (postfix == '!*') { cType = SPCType.ninc; }
+    else if (postfix == '~') { cType = SPCType.regex; }
+    else if (postfix == '!~') { cType = SPCType.nregex; }
+    else {
+      key = ''; return 'InvalidKeyFormat (wrong postfix)';
+    }
+    bool validKeyName = false;
+    for (var availableKey in availableKeys) {
+      if (keyName == availableKey) { validKeyName = true; break; }
+    }
+    if (!validKeyName) {
+      key = ''; return 'InvalidKeyFormat (wrong key name)';
+    }
+
+    key = keyName;
+    value = valueParam;
+    return 'complete';
+  }
+
+  ///'toStringParam' function.
+  ///Converts this object to '[key, value]' pair (Type 'List<String>').
+  ///Size of returned list will be always 2.
+  ///Returned string of the list can be empty string.
+  List<String> toStringParam() {
+    List<String> ret = [];
+    String keyRet = key;
+    switch (qType) {
+      case SPQType.mul: break;
+      case SPQType.add: keyRet = '+$keyRet'; break;
+      case SPQType.delayMul: keyRet = ')($keyRet'; break;
+      case SPQType.delayAdd: keyRet = ')+($keyRet'; break;
+    }
+    switch (cType) {
+      case SPCType.eq: break;
+      case SPCType.ne: keyRet = '$keyRet!'; break;
+      case SPCType.lt: keyRet = '$keyRet!>'; break;
+      case SPCType.gt: keyRet = '$keyRet!<'; break;
+      case SPCType.le: keyRet = '$keyRet<'; break;
+      case SPCType.ge: keyRet = '$keyRet>'; break;
+      case SPCType.inc: keyRet = '$keyRet*'; break;
+      case SPCType.ninc: keyRet = '$keyRet!*'; break;
+      case SPCType.regex: keyRet = '$keyRet~'; break;
+      case SPCType.nregex: keyRet = '$keyRet!~'; break;
+    }
+    ret.add(keyRet);
+    ret.add(value);
+    return ret;
+  }
+}
+
 ///'UserInfo' class.
 ///Contains user information, id, password(hashed), list of enrolled courses,
 ///and other things.
@@ -117,20 +256,49 @@ class CourseTimeInfo {
   }
   int get day => CourseTimeInfo.value2Day(value);
   int get startHour => CourseTimeInfo.value2StartHour(value);
-  int get startMin =>  CourseTimeInfo.value2StartMin(value);
+  int get startMin => CourseTimeInfo.value2StartMin(value);
   int get endHour => CourseTimeInfo.value2EndHour(value);
   int get endMin => CourseTimeInfo.value2EndMin(value);
 }
 
+///'CourseSearchP extends SearchParam' class (Course search param).
+///Key-value data structure for searching 'CourseInfo'.
+///And has other attributes like type, for searching.
+class CourseSearchP extends SearchParam {
+  //constructor
+  CourseSearchP([final String keyParam = '', final String valueParam = '']) :
+    super(keyParam, valueParam)
+  {
+    availableKeys = [
+      'id',
+      'courseName',
+      'infoTimes',
+      'proName',
+      'locationStr',
+      'groupStr',
+      'etc',
+    ];
+  }
+}
+
 ///'CourseInfo' class
 class CourseInfo {
+  //id of course, like 'ABC000C03'.
   String id;
+  //The name of course.
   String courseName = '';
+  //Course time information.
   List<CourseTimeInfo> infoTimes = [];
+  //Name of the professor.
   String proName = '';
+  //Location, String.
   String locationStr = '';
+  //Group name of course, String.
   String groupStr = '';
+  //Extra information, String.
   String etc = '';
+
+  //constructor
   CourseInfo(String idParam) : id = idParam;
 
   //json conversion
@@ -157,7 +325,55 @@ class CourseInfo {
     'etc': etc,
   };
 
+  //'isTargetOfSearch'. for searching filter.
+  bool isTargetOfSearch(final CourseSearchP searchParam) {
 
+    if (
+      searchParam.key == 'id' ||
+      searchParam.key == 'courseName' ||
+      searchParam.key == 'proName' ||
+      searchParam.key == 'locationStr' ||
+      searchParam.key == 'groupStr' ||
+      searchParam.key == 'etc'
+    ) {
+      //CASE OF: searching is for string.
+      String targetV = '';
+      String searchV = searchParam.value.toLowerCase();
+      RegExpMatch? match;
+      if (searchParam.key == 'id') { targetV = id; }
+      else if (searchParam.key == 'courseName') { targetV = courseName; }
+      else if (searchParam.key == 'proName') { targetV = proName; }
+      else if (searchParam.key == 'locationStr') { targetV = locationStr; }
+      else if (searchParam.key == 'groupStr') { targetV = groupStr; }
+      else if (searchParam.key == 'etc') { targetV = etc; }
+      targetV = targetV.toLowerCase();
+      switch(searchParam.cType) { // switch: start
+        case SPCType.eq: return targetV.compareTo(searchV) == 0;
+        case SPCType.ne: return targetV.compareTo(searchV) != 0;
+        case SPCType.lt: return targetV.compareTo(searchV) < 0;
+        case SPCType.gt: return targetV.compareTo(searchV) > 0;
+        case SPCType.le: return targetV.compareTo(searchV) <= 0;
+        case SPCType.ge: return targetV.compareTo(searchV) >= 0;
+        case SPCType.inc: return targetV.contains(searchV);
+        case SPCType.ninc: return !(targetV.contains(searchV));
+        case SPCType.regex:
+        case SPCType.nregex:
+          match = RegExp(searchV).firstMatch(targetV);
+          if (match == null) {
+            return searchParam.cType == SPCType.nregex;
+          }
+          else {
+            return searchParam.cType == SPCType.regex;
+          }
+      } // switch: end
+    }
+    else if (searchParam.key == 'infoTimes') {
+      //TODO need to implement this.
+      return false;
+    }
+
+    return false;
+  }
 
   bool get test => true;
 }
