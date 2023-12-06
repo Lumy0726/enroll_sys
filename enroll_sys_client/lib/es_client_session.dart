@@ -220,6 +220,85 @@ class EsClientSess {
     }
   }
 
+  //'getCourseEnrolled' function.
+  //get list of enrolled course from server.
+  static Future<int> getCourseEnrolled() async {
+    if (_conState != ST_LOGINED) {
+      print('Please login to get courses');
+      return 1;
+    }
+    try {
+      //get course request
+      final HttpClientResponse response = await EsClient.handleHttp(
+        'GET',
+        '/students/$loginId/courses',
+        cookiesMap: cookiesMap,
+        timeoutD: EsClient.timeoutNetwork
+      );
+      //check response
+      if (response.statusCode != HttpStatus.ok) {
+        print('Error while get course enrolled request, '
+          'response code was (${response.statusCode})');
+        printErrorResponse(response);
+        return 2;
+      }
+      final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
+      print(JsonEncoder.withIndent('  ').convert(rObjDyn));
+      return 0;
+    }
+    catch (e) {
+      print('Error while get course enrolled request, ($e)');
+      return -1;
+    }
+  }
+
+  //'enrollCourse' function.
+  //request enrollment to the server (or cancel request).
+  static Future<int> enrollCourse(
+    final String enrollmentRqId,
+    [ final bool cancelMode = false ]
+  ) async {
+    if (_conState != ST_LOGINED) {
+      print('Please login to get courses');
+      return 1;
+    }
+    try {
+      final String typeStr =
+        (cancelMode ? 'enrollmentCancelId' : 'enrollmentRqId');
+      final Map<String, String> qParams = {typeStr : enrollmentRqId};
+      //get course request
+      final HttpClientResponse response = await EsClient.handleHttp(
+        'UPDATE',
+        '/students/$loginId/courses',
+        cookiesMap: cookiesMap,
+        queryParameters: qParams,
+        timeoutD: EsClient.timeoutNetwork
+      );
+      //check response
+      if (response.statusCode != HttpStatus.ok) {
+        print('Error while put course enrolled request, '
+          'response code was (${response.statusCode})');
+        printErrorResponse(response);
+        return 2;
+      }
+      final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
+      print(JsonEncoder.withIndent('  ').convert(rObjDyn));
+      return 0;
+    }
+    catch (e) {
+      print('Error while put course enrolled request, ($e)');
+      return -1;
+    }
+  }
+
+  //'cancelCourse' function.
+  //request enrollment cancel to the server.
+  static Future<int> cancelCourse(
+    final String enrollmentRqId
+  ) async {
+    return enrollCourse(enrollmentRqId, true);
+  }
+
   //'getMyinfo' function.
   //get current login-ed user information from server.
   static Future<int> getMyinfo([final bool courseDetail = false ]) async {

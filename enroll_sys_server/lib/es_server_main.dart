@@ -42,10 +42,10 @@ class EsServerMain {
   ///    if function completes well (size of 'courseInfoOut' will be 1),
   ///    otherwise, size of 'courseInfoOut' will be 0.
   ///
-  ///Return: will be 'compelete' if function compeletes well,
+  ///Return: will be 'complete' if function completes well,
   ///  otherwise, will be error string.
   ///
-  ///NOTE: do not edit the returned object.
+  ///NOTE: do not edit the returned object (coursesInfoOut).
   ///  The object can be actual data or copied data.
   static String getCoursesInfo(
     final Map<String, String> qParams,
@@ -159,6 +159,144 @@ class EsServerMain {
       ret = ret2;
     }
     return ret;
+  }
+  //TODO need document
+  //Returned value will be:
+  //  'complete', 'alreadyEnrolled', 'alreadyCanceled',
+  //  'noQuota', 'notValid', 'notExist'.
+  static String handleEnrollmentRq(
+    final UserInfo userInfo,
+    final String enrollmentRqId,
+    final bool cancelMode
+  ) {
+    if (!(cancelMode)){
+      //CASE OF: enrollment mode.
+      if (userInfo.enrollList.contains(enrollmentRqId)) {
+        return 'alreadyEnrolled';
+      }
+      if (!(_courseInfoMap.containsKey(enrollmentRqId))) {
+        return 'notExist';
+      }
+      //TODO: need to implement below condition statement (enrollmentRq).
+      if (enrollmentRqId == 'cannotEnrollForThisUser') {
+        return 'notValid';
+      }
+      //TODO: need to implement below condition statement (enrollmentRq).
+      if (enrollmentRqId == 'noRemainedQuota') {
+        return 'noQuota';
+      }
+      _stuInfoMap[userInfo.id]!.enrollList.add(enrollmentRqId);
+      userInfo.enrollList.add(enrollmentRqId);
+      return 'complete';
+    }
+    else {
+      //CASE OF: cancel mode.
+      if (!(userInfo.enrollList.contains(enrollmentRqId))) {
+        return 'alreadyCanceled';
+      }
+      if (!(_courseInfoMap.containsKey(enrollmentRqId))) {
+        return 'notExist';
+      }
+      _stuInfoMap[userInfo.id]!.enrollList.remove(enrollmentRqId);
+      userInfo.enrollList.remove(enrollmentRqId);
+      return 'complete';
+    }
+  }
+  ///'getEnrolledCoursesInfo' function.
+  ///Get 'CourseInfo' of enrolled courses, of target user.
+  ///
+  ///Param:
+  ///
+  ///  'requestedId' - id of user.
+  ///
+  ///  'courseInfoOut' - result 'Map<String, CourseInfo>' will be out here,
+  ///    if function completes well (size of 'courseInfoOut' will be 1),
+  ///    otherwise, size of 'courseInfoOut' will be 0.
+  ///
+  ///Return: will be 'complete' if function completes well,
+  ///  otherwise, will be error string.
+  ///
+  ///NOTE: do not edit the returned object (coursesInfoOut).
+  ///  The object can be actual data or copied data.
+  static String getEnrolledCoursesInfo(
+    final String requestedId,
+    final List<Map<String, CourseInfo>> coursesInfoOut
+  ) {
+    Map<String, CourseInfo> courseInfoMap = {};
+    UserInfo? userInfo = getStuInfo(requestedId);
+    if (userInfo == null) {
+      return 'No user of requested id';
+    }
+    for (var courseId in userInfo.enrollList) {
+      CourseInfo? courseInfo = getCourseInfoFromId(courseId);
+      if (courseInfo == null) {
+        courseInfo = CourseInfo(courseId);
+        courseInfo.courseName = 'No course information';
+      }
+      courseInfoMap[courseId] = courseInfo;
+    }
+    coursesInfoOut.add(courseInfoMap);
+    return 'complete';
+  }
+  ///'enrollmentRqAndGet' function.
+  ///Handle enrollment (or cancel) request using course id, of target user.
+  ///And, get (query) 'CourseInfo' of enrolled courses, of target user.
+  ///
+  ///Param:
+  ///
+  ///  'requestedId' - id of user.
+  ///
+  ///  'courseInfoOut' - result 'Map<String, CourseInfo>' will be out here,
+  ///    if the course query completes well
+  ///      (size of 'courseInfoOut' will be 1),
+  ///    otherwise, size of 'courseInfoOut' will be 0.
+  ///
+  ///  'enrollmentRqId' - target course id to be enrolled or canceled.
+  ///
+  ///  'cancelMode' - true for cancel mode.
+  ///
+  ///Return:
+  ///  If the request is not valid itself (like no user id),
+  ///    then the length of returned list will be not 2,
+  ///    and 'returnedList[0]' will be error string (if exists).
+  ///  Otherwise, the length of returned list will be 2,
+  ///    'returnedList[0]' will be the result string of course query
+  ///      ('complete' for no error, error string otherwise),
+  ///    'returnedList[1]' will be the result string of,
+  ///      enrollment (or cancel) request
+  ///      (returned string of 'handleEnrollmentRq' function).
+  ///
+  ///NOTE: do not edit the returned object (coursesInfoOut).
+  ///  The object can be actual data or copied data.
+  static List<String> enrollmentRqAndGet(
+    final String requestedId,
+    final List<Map<String, CourseInfo>> coursesInfoOut,
+    final String enrollmentRqId,
+    [ final bool cancelMode = false ]
+  ) {
+    UserInfo? userInfo = getStuInfo(requestedId);
+    if (userInfo == null) {
+      return ['No user of requested id'];
+    }
+    String getResult = 'complete';
+    String enrollmentResult = handleEnrollmentRq(
+      userInfo, enrollmentRqId, cancelMode);
+    try {
+      Map<String, CourseInfo> courseInfoMap = {};
+      for (var courseId in userInfo.enrollList) {
+        CourseInfo? courseInfo = getCourseInfoFromId(courseId);
+        if (courseInfo == null) {
+          courseInfo = CourseInfo(courseId);
+          courseInfo.courseName = 'No course information';
+        }
+        courseInfoMap[courseId] = courseInfo;
+      }
+      coursesInfoOut.add(courseInfoMap);
+    }
+    catch (e) {
+      getResult = 'InternalServerError';
+    }
+    return [getResult, enrollmentResult];
   }
 
 

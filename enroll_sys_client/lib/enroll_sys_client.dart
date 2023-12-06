@@ -131,11 +131,30 @@ class EsClient {
           }
           return;
         }
+        else if (argv[1] == 'enrolled' && argv.length == 2) {
+          EsClientSess.getCourseEnrolled();
+          return;
+        }
       }
       print('Usage: \'get course\'');
       print('       \'get course key=value[&key=value ...]\'');
+      print('       \'get enrolled\'');
       print('       \'get myinfo\'');
       print('       \'get myinfo courseDetail\'');
+    }
+    else if (argv[0] == 'enroll') {
+      if (argv.length == 2) {
+        EsClientSess.enrollCourse(argv[1]);
+        return;
+      }
+      print('Usage: \'enroll courseId\'');
+    }
+    else if (argv[0] == 'cancel') {
+      if (argv.length == 2) {
+        EsClientSess.cancelCourse(argv[1]);
+        return;
+      }
+      print('Usage: \'cancel courseId\'');
     }
     else if (argv[0] == 'test') {
       try {

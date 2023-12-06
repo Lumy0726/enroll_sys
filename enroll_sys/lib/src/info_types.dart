@@ -430,7 +430,7 @@ class CourseInfo {
       } // switch: end
     }
     else if (searchParam.key == 'infoTimes') {
-      //TODO need to implement this.
+      //TODO need to implement this (query course with infoTimes).
       return false;
     }
 

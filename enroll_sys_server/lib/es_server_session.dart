@@ -89,23 +89,31 @@ class EsServerSess {
     }
 
     //path check
-    if (pathSegs.isNotEmpty && pathSegs[0] == 'test') {
-      jsonStringRet.add(jsonEncode([pathSegs, qParams]));
-      return HttpStatus.ok;
-    }
-    else if (pathSegs.length == 1 && pathSegs[0] == 'login') {
-      //login or logout
-      return await phrLogin(request, jsonStringRet, qParams, loginToken);
-    }
-    else if (pathSegs.length == 1 && pathSegs[0] == 'courses') {
-      return await phrCourses(request, jsonStringRet, qParams, loginId);
-    }
-    else if (
-      pathSegs.length == 2 &&
-      pathSegs[0] == 'students'
-    ) {
-      return await phrStudentInfo(request, jsonStringRet, qParams,
-        loginId, pathSegs[1]);
+    if (pathSegs.isNotEmpty) {
+      if (pathSegs[0] == 'test') {
+        jsonStringRet.add(jsonEncode([pathSegs, qParams]));
+        return HttpStatus.ok;
+      }
+      else if (pathSegs.length == 1 && pathSegs[0] == 'login') {
+        //login or logout
+        return await phrLogin(request, jsonStringRet, qParams, loginToken);
+      }
+      else if (pathSegs.length == 1 && pathSegs[0] == 'courses') {
+        return await phrCourses(request, jsonStringRet, qParams, loginId);
+      }
+      else if (pathSegs[0] == 'students') {
+        if (pathSegs.length == 2) {
+          return await phrStudentInfo(request, jsonStringRet, qParams,
+            loginId, pathSegs[1]);
+        }
+        else if (
+          pathSegs.length == 3 &&
+          pathSegs[2] == 'courses'
+        ) {
+          return await phrStudentCourses(request, jsonStringRet, qParams,
+            loginId, pathSegs[1]);
+        }
+      }
     }
 
     //unknown request.
@@ -208,6 +216,102 @@ class EsServerSess {
     else {
       jsonStringRet.add(jsonEncode({'reason': result}));
       return HttpStatus.badRequest;
+    }
+  }
+  //'phrStudentCourses'
+  //  (Process Http Request /student/requestedId/courses) function.
+  //See also 'phrCoursesEnrolled' too.
+  static Future<int> phrStudentCourses(
+    final HttpRequest request,
+    final List<String> jsonStringRet,
+    final Map<String, String> qParams,
+    final String loginId,
+    final String requestedId
+  ) async {
+    //request check
+    if (
+      request.method != "GET" &&
+      request.method != "PUT"
+    ) {
+      const String reason = 'Invalid rq: '
+        '\'/student/requestedId/courses\' '
+        'request accepts GET (READ) or PUT (UPDATE)';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.methodNotAllowed;
+    }
+    if (loginId == '') {
+      const String reason = 'Invalid rq: '
+        '\'/student/requestedId/courses\' '
+        'request needs login';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.unauthorized;
+    }
+    if (loginId != requestedId) {
+      const String reason = 'Invalid rq: '
+        '\'/student/requestedId/courses\', '
+        'cannot get information of user, '
+        'with current login permission';
+      print(reason);
+      jsonStringRet.add(jsonEncode({'reason': reason}));
+      return HttpStatus.unauthorized;
+    }
+
+    //response
+    if (request.method == "PUT") {
+      //CASE OF: "PUT" method, request of course enrollment (or cancel).
+      final String? enrollmentRqId = qParams['enrollmentRqId'];
+      final String? enrollmentCancelId = qParams['enrollmentCancelId'];
+      if (enrollmentRqId == null && enrollmentCancelId == null) {
+        jsonStringRet.add(jsonEncode(
+          {'reason': 'no course id of enrollment (or cancel) request'}
+        ));
+        return HttpStatus.badRequest;
+      }
+      List<Map<String, CourseInfo>> coursesInfoOut = [];
+      List<String> results;
+      if (enrollmentRqId != null) {
+        results = EsServerMain.enrollmentRqAndGet(
+          requestedId, coursesInfoOut, enrollmentRqId);
+      }
+      else {
+        results = EsServerMain.enrollmentRqAndGet(
+          requestedId, coursesInfoOut, enrollmentCancelId!, true);
+      }
+      if (results.length != 2) {
+        //CASE OF: bad request etc.
+        if (results.isEmpty) {
+          jsonStringRet.add(jsonEncode({'reason': 'unknown'}));
+        }
+        else {
+          jsonStringRet.add(jsonEncode({'reason': results[0]}));
+        }
+        return HttpStatus.badRequest;
+      }
+      Map<String, dynamic> jsonObj = {
+        'getResult' : results[0],
+        'enrollmentResult' : results[1],
+      };
+      if (coursesInfoOut.isNotEmpty) {
+        jsonObj['enrolledList'] = coursesInfoOut.first;
+      }
+      jsonStringRet.add(jsonEncode(jsonObj));
+      return HttpStatus.ok;
+    }
+    else {
+      //CASE OF: "GET" method, request of getting current enrolled course.
+      List<Map<String, CourseInfo>> coursesInfoOut = [];
+      String result = EsServerMain.getEnrolledCoursesInfo(
+        requestedId, coursesInfoOut);
+      if (coursesInfoOut.isNotEmpty) {
+        jsonStringRet.add(jsonEncode(coursesInfoOut.first));
+        return HttpStatus.ok;
+      }
+      else {
+        jsonStringRet.add(jsonEncode({'reason': result}));
+        return HttpStatus.badRequest;
+      }
     }
   }
   //'phrStudentInfo' (Process Http Request /student/requestedId) function.
