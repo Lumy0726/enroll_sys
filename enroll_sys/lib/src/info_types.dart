@@ -145,7 +145,7 @@ class UserInfo {
   String id;
   String idDecimal;
   String hashedPw;
-  List<String> enrollList = [];
+  Set<String> enrollList = {};
   UserInfo(
     final String idParam,
     final String idDecimalParam,
@@ -161,7 +161,7 @@ class UserInfo {
     idDecimal = obj.idDecimal,
     hashedPw = obj.hashedPw
   {
-    enrollList = List<String>.from(obj.enrollList);
+    enrollList = Set<String>.from(obj.enrollList);
   }
 
   //json conversion
@@ -171,7 +171,7 @@ class UserInfo {
     idDecimal = json['idDecimal'],
     hashedPw = json['hashedPw']
   {
-    for (dynamic value in (json['enrollList'] as List)) {
+    for (dynamic value in (json['enrollList'] as List<dynamic>)) {
       enrollList.add(value);
     }
   }
@@ -180,8 +180,54 @@ class UserInfo {
     'id': id,
     'idDecimal': idDecimal,
     'hashedPw': hashedPw,
-    'enrollList': enrollList,
+    'enrollList': List<String>.from(enrollList),
   };
+}
+
+///'UserInfoCDetail' class (User information + enrolled course detail).
+///Extends 'UserInfo'.
+///Purpose of this class is communication between client and server.
+class UserInfoCDetail extends UserInfo {
+  Map<String, CourseInfo> courseInfoMap = {};
+  UserInfoCDetail(
+    final String idParam,
+    final String idDecimalParam,
+    final String hashedPwParam
+  ) :
+    super(idParam, idDecimalParam, hashedPwParam) { ; }
+  UserInfoCDetail.clone(
+    final UserInfo obj
+  ) :
+    super.clone(obj)
+  {
+    if (obj is UserInfoCDetail) {
+      for (var entry in obj.courseInfoMap.entries) {
+        courseInfoMap[entry.key] = CourseInfo.clone(entry.value);
+      }
+    }
+  }
+
+  //json conversion
+
+  UserInfoCDetail.fromJson(final Map<String, dynamic> json) :
+    super.fromJson(json)
+  {
+    for (
+      dynamic entry
+      in (json['courseInfoMap'] as Map<String, dynamic>).entries
+    ) {
+      courseInfoMap[entry.key] = CourseInfo.fromJson(
+        entry.value as Map<String, dynamic>
+      );
+      //courseInfoMap[entry.key] = entry.value;
+    }
+  }
+  @override
+  Map<String, dynamic> toJson() {
+    Map<String, dynamic> ret = super.toJson();
+    ret['courseInfoMap'] = courseInfoMap;
+    return ret;
+  }
 }
 
 ///'CourseTimeInfo' class
@@ -199,6 +245,7 @@ class CourseTimeInfo {
   ///constructor 'CourseTimeInfo'
   ///'valueParam' - See 'CourseTimeInfo.format2Value'
   CourseTimeInfo(final int valueParam) : value = valueParam;
+  CourseTimeInfo.clone(final CourseTimeInfo obj) : value = obj.value;
 
   //json conversion
 
@@ -300,6 +347,20 @@ class CourseInfo {
 
   //constructor
   CourseInfo(String idParam) : id = idParam;
+  CourseInfo.clone(
+    final CourseInfo obj
+  ) :
+    id = obj.id,
+    courseName = obj.courseName,
+    proName = obj.proName,
+    locationStr = obj.locationStr,
+    groupStr = obj.groupStr,
+    etc = obj.etc
+  {
+    for (var value in obj.infoTimes) {
+      infoTimes.add(CourseTimeInfo.clone(value));
+    }
+  }
 
   //json conversion
 
@@ -308,10 +369,11 @@ class CourseInfo {
     courseName = json['courseName'],
     proName = json['proName'],
     locationStr = json['locationStr'],
+    groupStr = json['groupStr'],
     etc = json['etc']
   {
-    for (dynamic value in (json['infoTimes'] as List)) {
-      infoTimes.add(CourseTimeInfo.fromJson(value));
+    for (dynamic value in (json['infoTimes'] as List<dynamic>)) {
+      infoTimes.add(CourseTimeInfo.fromJson(value as Map<String, dynamic>));
     }
   }
   Map<String, dynamic> toJson() =>
