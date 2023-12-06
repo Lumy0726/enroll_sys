@@ -123,13 +123,19 @@ class EsClient {
           return;
         }
         else if (argv[1] == 'myinfo') {
-          EsClientSess.getMyinfo();
+          if (argv.length == 3 && argv[2] == 'courseDetail') {
+            EsClientSess.getMyinfo(true);
+          }
+          else {
+            EsClientSess.getMyinfo();
+          }
           return;
         }
       }
       print('Usage: \'get course\'');
       print('       \'get course key=value[&key=value ...]\'');
       print('       \'get myinfo\'');
+      print('       \'get myinfo courseDetail\'');
     }
     else if (argv[0] == 'test') {
       try {

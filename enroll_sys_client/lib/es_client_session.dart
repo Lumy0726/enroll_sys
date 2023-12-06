@@ -194,7 +194,7 @@ class EsClientSess {
           }
         }
       }
-      print('qParams=(${qParams})');
+      print('qParams=($qParams)');
       //get course request
       final HttpClientResponse response = await EsClient.handleHttp(
         'GET',
@@ -222,17 +222,22 @@ class EsClientSess {
 
   //'getMyinfo' function.
   //get current login-ed user information from server.
-  static Future<int> getMyinfo() async {
+  static Future<int> getMyinfo([final bool courseDetail = false ]) async {
     if (_conState != ST_LOGINED) {
       print('Please login to get user information');
       return 1;
     }
     try {
+      final Map<String, String> qParams = {};
+      if (courseDetail) {
+        qParams['courseDetail'] = 'true';
+      }
       //get user information request
       final HttpClientResponse response = await EsClient.handleHttp(
         'GET',
         '/students/$loginId',
         cookiesMap: cookiesMap,
+        queryParameters: qParams,
         timeoutD: EsClient.timeoutNetwork
       );
       //check response
@@ -243,7 +248,7 @@ class EsClientSess {
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
-      print(rObjDyn);
+      print(JsonEncoder.withIndent('  ').convert(rObjDyn));
       return 0;
     }
     catch (e) {

@@ -24,6 +24,13 @@ class EsServerMain {
   static Map<String, CourseInfo> getAllCoursesInfo() {
     return _courseInfoMap;
   }
+  //TODO need document
+  //
+  //NOTE: do not edit the returned object.
+  //  The object can be actual data or copied data.
+  static CourseInfo? getCourseInfoFromId(final String courseId) {
+    return _courseInfoMap[courseId];
+  }
   ///'getCoursesInfo' function.
   ///Get 'CourseInfo' using querys (key and value).
   ///
@@ -134,19 +141,25 @@ class EsServerMain {
   //
   //NOTE: do not edit the returned object.
   //  The object can be actual data or copied data.
-  static UserInfo? getStuInfo(final String id) {
-    return _stuInfoMap[id];
-  }
-
-  //TODO need document
-  static String queryCoursesParam(
-    final Map<String, String> qParams,
-    final List<int> resultOut
+  static UserInfo? getStuInfo(
+    final String id,
+    [ final bool courseDetail = false]
   ) {
-    String ret = 'complete';
+    UserInfo? ret = _stuInfoMap[id];
+    if (ret != null && courseDetail) {
+      UserInfoCDetail ret2 = UserInfoCDetail.clone(ret);
+      for (var courseId in ret.enrollList) {
+        CourseInfo? courseInfo = getCourseInfoFromId(courseId);
+        if (courseInfo == null) {
+          courseInfo = CourseInfo(courseId);
+          courseInfo.courseName = 'No course information';
+        }
+        ret2.courseInfoMap[courseId] = courseInfo;
+      }
+      ret = ret2;
+    }
     return ret;
   }
-
 
 
   //inflate data, for test

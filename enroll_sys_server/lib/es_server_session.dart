@@ -244,7 +244,10 @@ class EsServerSess {
     }
 
     //response
-    UserInfo? stuInfo = EsServerMain.getStuInfo(requestedId);
+    UserInfo? stuInfo = EsServerMain.getStuInfo(
+      requestedId,
+      (qParams['courseDetail'] ?? 'false') == 'true'
+    );
     if (stuInfo == null) {
       const String reason =
         'Error on processing rq: \'/student/requestedId\', '
@@ -253,9 +256,9 @@ class EsServerSess {
       jsonStringRet.add(jsonEncode({'reason': reason}));
       return HttpStatus.notFound;
     }
-    UserInfo stuInfoClone = UserInfo.clone(stuInfo);
-    stuInfoClone.hashedPw = '';
-    jsonStringRet.add(jsonEncode(stuInfoClone));
+    Map<String, dynamic> stuInfo2Map = stuInfo.toJson();
+    stuInfo2Map.remove('hashedPw'); // remove password information.
+    jsonStringRet.add(jsonEncode(stuInfo2Map));
     return HttpStatus.ok;
   }
 
