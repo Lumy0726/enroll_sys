@@ -33,7 +33,7 @@ class EsClientSess {
   ) async {
     try {
       dynamic obj = await utf8StreamList2JsonObj(response);
-      if (obj != null) { print(obj); }
+      if (obj != null) { EsClient.printMethod(obj); }
     }
     catch (e) {
       //do nothing
@@ -46,7 +46,7 @@ class EsClientSess {
     final String pwParam
   ) async {
     if (_conState != ST_NON) {
-      print('Cannot login, current state is not logout state');
+      EsClient.printMethod('Cannot login, current state is not logout state');
       return 1;
     }
     _conState = ST_LOGINRQ;
@@ -66,21 +66,21 @@ class EsClientSess {
       //check response
       if (response.statusCode != HttpStatus.ok) {
         _conState = ST_NON;
-        print('Error while login request, '
+        EsClient.printMethod('Error while login request, '
           'response code was (${response.statusCode})');
         printErrorResponse(response);
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
       if (!isMapStr(rObjDyn)) {
-        throw FormatException('json response is corrupted');
+        throw const FormatException('json response is corrupted');
       }
       //call 'doLoginOnResult'
       return doLoginOnResult(rObjDyn as Map<String, dynamic>);
     }
     catch (e) {
       _conState = ST_NON;
-      print('Error while login request, ($e)');
+      EsClient.printMethod('Error while login request, ($e)');
       return -1;
     }
   }
@@ -89,12 +89,12 @@ class EsClientSess {
   //'result[...]' should be String type.
   static int doLoginOnResult(final Map<String, dynamic> result) {
     if (result['result'] != 'true') {
-      print('login failed, (${result['resultStr']})');
+      EsClient.printMethod('login failed, (${result['resultStr']})');
       _conState = ST_NON;
       return 3;
     }
     //login complete
-    print('login complete');
+    EsClient.printMethod('login complete');
     cookiesMap.clear();
     for (var entry in result.entries) {
       cookiesMap[entry.key] = entry.value as String;
@@ -107,7 +107,7 @@ class EsClientSess {
   //'doLogout' function.
   static Future<int> doLogout() async {
     if (_conState != ST_LOGINED) {
-      print('Cannot logout, current state is not login state');
+      EsClient.printMethod('Cannot logout, current state is not login state');
       return 1;
     }
     _conState = ST_LOGOUTRQ;
@@ -127,21 +127,21 @@ class EsClientSess {
       //check response
       if (response.statusCode != HttpStatus.ok) {
         _conState = ST_LOGINED;
-        print('Error while logout request, '
+        EsClient.printMethod('Error while logout request, '
           'response code was (${response.statusCode})');
         printErrorResponse(response);
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
       if (!isMapStr(rObjDyn)) {
-        throw FormatException('json response is corrupted');
+        throw const FormatException('json response is corrupted');
       }
       //call 'doLogoutOnResult'
       return doLogoutOnResult(rObjDyn as Map<String, dynamic>);
     }
     catch (e) {
       _conState = ST_LOGINED;
-      print('Error while logout request, ($e)');
+      EsClient.printMethod('Error while logout request, ($e)');
       return -1;
     }
   }
@@ -150,12 +150,12 @@ class EsClientSess {
   //'result[...]' should be String type.
   static int doLogoutOnResult(final Map<String, dynamic> result) {
     if (result['result'] != 'true') {
-      print('logout failed, (${result['resultStr']})');
+      EsClient.printMethod('logout failed, (${result['resultStr']})');
       _conState = ST_LOGINED;
       return 3;
     }
     //logout complete
-    print('logout complete, (${result['resultStr']})');
+    EsClient.printMethod('logout complete, (${result['resultStr']})');
     cookiesMap.clear();
     _conState = ST_NON;
     return 0;
@@ -167,7 +167,7 @@ class EsClientSess {
     final String params
   ) async {
     if (_conState != ST_LOGINED) {
-      print('Please login to get courses');
+      EsClient.printMethod('Please login to get courses');
       return 1;
     }
     try {
@@ -180,7 +180,7 @@ class EsClientSess {
         for (var str in argv) {
           List<String> keyAndValue = splitExceptEscaped(str, r'\', '=');
           if (keyAndValue.length != 2) {
-            print('wrong key=value pair, ($str)');
+            EsClient.printMethod('wrong key=value pair, ($str)');
           }
           else {
             //NOTE: because 'qParams' is 'Map' type,
@@ -194,7 +194,7 @@ class EsClientSess {
           }
         }
       }
-      print('qParams=($qParams)');
+      EsClient.printMethod('qParams=($qParams)');
       //get course request
       final HttpClientResponse response = await EsClient.handleHttp(
         'GET',
@@ -205,17 +205,17 @@ class EsClientSess {
       );
       //check response
       if (response.statusCode != HttpStatus.ok) {
-        print('Error while get course request, '
+        EsClient.printMethod('Error while get course request, '
           'response code was (${response.statusCode})');
         printErrorResponse(response);
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
-      print(JsonEncoder.withIndent('  ').convert(rObjDyn));
+      EsClient.printMethod(JsonEncoder.withIndent('  ').convert(rObjDyn));
       return 0;
     }
     catch (e) {
-      print('Error while get course request, ($e)');
+      EsClient.printMethod('Error while get course request, ($e)');
       return -1;
     }
   }
@@ -224,7 +224,7 @@ class EsClientSess {
   //get list of enrolled course from server.
   static Future<int> getCourseEnrolled() async {
     if (_conState != ST_LOGINED) {
-      print('Please login to get courses');
+      EsClient.printMethod('Please login to get courses');
       return 1;
     }
     try {
@@ -237,17 +237,17 @@ class EsClientSess {
       );
       //check response
       if (response.statusCode != HttpStatus.ok) {
-        print('Error while get course enrolled request, '
+        EsClient.printMethod('Error while get course enrolled request, '
           'response code was (${response.statusCode})');
         printErrorResponse(response);
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
-      print(JsonEncoder.withIndent('  ').convert(rObjDyn));
+      EsClient.printMethod(JsonEncoder.withIndent('  ').convert(rObjDyn));
       return 0;
     }
     catch (e) {
-      print('Error while get course enrolled request, ($e)');
+      EsClient.printMethod('Error while get course enrolled request, ($e)');
       return -1;
     }
   }
@@ -259,7 +259,7 @@ class EsClientSess {
     [ final bool cancelMode = false ]
   ) async {
     if (_conState != ST_LOGINED) {
-      print('Please login to get courses');
+      EsClient.printMethod('Please login to get courses');
       return 1;
     }
     try {
@@ -276,17 +276,17 @@ class EsClientSess {
       );
       //check response
       if (response.statusCode != HttpStatus.ok) {
-        print('Error while put course enrolled request, '
+        EsClient.printMethod('Error while put course enrolled request, '
           'response code was (${response.statusCode})');
         printErrorResponse(response);
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
-      print(JsonEncoder.withIndent('  ').convert(rObjDyn));
+      EsClient.printMethod(JsonEncoder.withIndent('  ').convert(rObjDyn));
       return 0;
     }
     catch (e) {
-      print('Error while put course enrolled request, ($e)');
+      EsClient.printMethod('Error while put course enrolled request, ($e)');
       return -1;
     }
   }
@@ -303,7 +303,7 @@ class EsClientSess {
   //get current login-ed user information from server.
   static Future<int> getMyinfo([final bool courseDetail = false ]) async {
     if (_conState != ST_LOGINED) {
-      print('Please login to get user information');
+      EsClient.printMethod('Please login to get user information');
       return 1;
     }
     try {
@@ -321,17 +321,17 @@ class EsClientSess {
       );
       //check response
       if (response.statusCode != HttpStatus.ok) {
-        print('Error while get user information request, '
+        EsClient.printMethod('Error while get user information request, '
           'response code was (${response.statusCode})');
         printErrorResponse(response);
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
-      print(JsonEncoder.withIndent('  ').convert(rObjDyn));
+      EsClient.printMethod(JsonEncoder.withIndent('  ').convert(rObjDyn));
       return 0;
     }
     catch (e) {
-      print('Error while get user information request, ($e)');
+      EsClient.printMethod('Error while get user information request, ($e)');
       return -1;
     }
   }

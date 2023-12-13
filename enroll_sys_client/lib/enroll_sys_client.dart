@@ -5,6 +5,13 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 
+///How 'EsClient.printMethod' prints string.
+///ON: call 'print()'.
+///CUSTOM: call 'EsClient.printMethodFunc()',
+///  which can be customized, defaults with 'print()'.
+///OFF: call nothing.
+enum PrintMethodMode { ON, CUSTOM, OFF, }
+
 //'EsClient' class (Enrollment System Client).
 //Client program's entry point
 //handles user input (stdin for now)
@@ -28,6 +35,17 @@ class EsClient {
     final int ret = initHttp();
     if (ret != 0) { _isClientRunning = false; return; }
     Future(handleStdin);
+  }
+
+  static PrintMethodMode printMethodMode = PrintMethodMode.ON;
+  //Customized print function for 'printMethod'.
+  static void Function(Object? obj) printMethodFunc = print;
+  static void printMethod(final String str) {
+    switch (printMethodMode) {
+      case PrintMethodMode.ON: print(str); break;
+      case PrintMethodMode.CUSTOM: printMethodFunc(str); break;
+      case PrintMethodMode.OFF: break;
+    }
   }
 
 
@@ -54,7 +72,7 @@ class EsClient {
     String str = '';
     while (_isClientRunning) {
       try {
-        str = await fStr.timeout(Duration(seconds: 1));
+        str = await fStr.timeout(const Duration(seconds: 1));
         onStdinLine(str);
         if (str == 'exit') {
           _isClientRunning = false;
@@ -75,7 +93,7 @@ class EsClient {
     stdout.write('\n\'handleStdin\' exited\n');
     brdStdinWithCancel.cancelStream();
     try {
-      str = await fStr.timeout(Duration());
+      str = await fStr.timeout(const Duration());
     }
     on TimeoutException {
       //CASE OF: Future 'fStr' is still waiting for user input.
@@ -97,22 +115,22 @@ class EsClient {
     final List<String> argv = splitExceptEscaped(cmd, r'\', ' ');
     argv.removeWhere((String v) => v =='');
     if (argv.isEmpty) { return; }
-    print('\n$cmd');
+    printMethod('\n$cmd');
 
     if (argv[0] == 'exit') {
       if (cmd != 'exit') {
-        print('Please use \'exit\' command without space and arguments');
+        printMethod('Please use \'exit\' command without space and arguments');
       }
     }
     else if (argv[0] == 'login') {
       if (argv.length != 3) {
-        print('Usage: \'login ID PASSWORD\''); return;
+        printMethod('Usage: \'login ID PASSWORD\''); return;
       }
       EsClientSess.doLogin(argv[1], argv[2]);
     }
     else if (argv[0] == 'logout') {
       if (argv.length != 1) {
-        print('Usage: \'logout\''); return;
+        printMethod('Usage: \'logout\''); return;
       }
       EsClientSess.doLogout();
     }
@@ -136,25 +154,25 @@ class EsClient {
           return;
         }
       }
-      print('Usage: \'get course\'');
-      print('       \'get course key=value[&key=value ...]\'');
-      print('       \'get enrolled\'');
-      print('       \'get myinfo\'');
-      print('       \'get myinfo courseDetail\'');
+      printMethod('Usage: \'get course\'');
+      printMethod('       \'get course key=value[&key=value ...]\'');
+      printMethod('       \'get enrolled\'');
+      printMethod('       \'get myinfo\'');
+      printMethod('       \'get myinfo courseDetail\'');
     }
     else if (argv[0] == 'enroll') {
       if (argv.length == 2) {
         EsClientSess.enrollCourse(argv[1]);
         return;
       }
-      print('Usage: \'enroll courseId\'');
+      printMethod('Usage: \'enroll courseId\'');
     }
     else if (argv[0] == 'cancel') {
       if (argv.length == 2) {
         EsClientSess.cancelCourse(argv[1]);
         return;
       }
-      print('Usage: \'cancel courseId\'');
+      printMethod('Usage: \'cancel courseId\'');
     }
     else if (argv[0] == 'test') {
       try {
@@ -174,23 +192,23 @@ class EsClient {
             queryParameters: qParams,
             timeoutD: timeoutNetwork
           );
-        print('Response Status Code (${response.statusCode})');
+        printMethod('Response Status Code (${response.statusCode})');
         final String content = await utf8.decoder.bind(response).join();
-        print('  ($content)');
+        printMethod('  ($content)');
       }
       catch (e) {
-        print('Error on "handleHttp" or decoder error ($e)');
+        printMethod('Error on "handleHttp" or decoder error ($e)');
       }
     }
     else {
       //CASE OF: unsupported command
-      print('Error: unsupported command (${argv[0]})');
+      printMethod('Error: unsupported command (${argv[0]})');
     }
   }
 
 
   //'timeoutNetwork' variable. Duration for network timeout.
-  static Duration timeoutNetwork = Duration(seconds: 10);
+  static Duration timeoutNetwork = const Duration(seconds: 10);
   //'_serverIp' variable and related things.
   static String _serverIp = InternetAddress.loopbackIPv4.host;
   static String get serverIp => _serverIp;
@@ -221,8 +239,8 @@ class EsClient {
       _httpClient = HttpClient();
     }
     catch (e) {
-      print('Error on "HttpClient()", at "EsClient.initHttp"');
-      print('  ($e)');
+      printMethod('Error on "HttpClient()", at "EsClient.initHttp"');
+      printMethod('  ($e)');
       return 1;
     }
 
@@ -246,12 +264,13 @@ class EsClient {
     }
     catch (e) {
       _httpClient = null;
-      print('Error on "EsClient._httpClient.close", at "EsClient.closeHttp"');
-      print('  ($e)');
+      printMethod('Error on "EsClient._httpClient.close", '
+        'at "EsClient.closeHttp"');
+      printMethod('  ($e)');
       return 1;
     }
     finally {
-      print('HttpServer closed');
+      printMethod('HttpServer closed');
     }
     return 0;
   }
