@@ -211,7 +211,7 @@ class EsClientSess {
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
-      EsClient.printMethod(JsonEncoder.withIndent('  ').convert(rObjDyn));
+      EsClient.printMethod(const JsonEncoder.withIndent('  ').convert(rObjDyn));
       return 0;
     }
     catch (e) {
@@ -243,7 +243,7 @@ class EsClientSess {
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
-      EsClient.printMethod(JsonEncoder.withIndent('  ').convert(rObjDyn));
+      EsClient.printMethod(const JsonEncoder.withIndent('  ').convert(rObjDyn));
       return 0;
     }
     catch (e) {
@@ -282,7 +282,7 @@ class EsClientSess {
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
-      EsClient.printMethod(JsonEncoder.withIndent('  ').convert(rObjDyn));
+      EsClient.printMethod(const JsonEncoder.withIndent('  ').convert(rObjDyn));
       return 0;
     }
     catch (e) {
@@ -327,7 +327,7 @@ class EsClientSess {
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
-      EsClient.printMethod(JsonEncoder.withIndent('  ').convert(rObjDyn));
+      EsClient.printMethod(const JsonEncoder.withIndent('  ').convert(rObjDyn));
       return 0;
     }
     catch (e) {
