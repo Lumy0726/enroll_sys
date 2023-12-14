@@ -6,12 +6,8 @@ void main() {
   //Start flutter UI
   EsClient.printMethodMode = PrintMethodMode.CUSTOM;
   EsClient.printMethodFunc = (Object? obj) => debugPrint(obj?.toString());
+  EsClient.start(noStdin: true);
   runApp(hierTopWidget);
-  //test code
-  Future.delayed(
-    const Duration(seconds : 3),
-    () => EsClient.printMethod('test')
-  );
 }
 
 //EOF

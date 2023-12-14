@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import './enroll_sys_client.dart';
+//import './enroll_sys_client.dart';
 import './layout_login.dart';
 
 Widget hierTopWidget = MaterialApp(
@@ -115,7 +115,7 @@ class TextFieldSfulState extends State<TextFieldSful> {
   }
   void onChanged(String value) {
     inputStr = value;
-    EsClient.printMethod(inputStr);
+    //EsClient.printMethod(inputStr);
   }
   @override
   Widget build(BuildContext context) {

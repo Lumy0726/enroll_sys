@@ -29,12 +29,12 @@ class EsClient {
   //Would be 'false' when client program should stop.
   static bool _isClientRunning = false;
   //'start' function. start 'client' program.
-  static void start() {
+  static void start({bool noStdin = false}) {
     if (_isClientRunning) { return; }
     _isClientRunning = true;
     final int ret = initHttp();
     if (ret != 0) { _isClientRunning = false; return; }
-    Future(handleStdin);
+    if (!noStdin) { Future(handleStdin); }
   }
 
   static PrintMethodMode printMethodMode = PrintMethodMode.ON;
