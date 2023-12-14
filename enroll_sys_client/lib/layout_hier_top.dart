@@ -51,13 +51,12 @@ class _WaitingCircleState
 }
 
 class ButtonAndWait extends StatefulWidget {
-  static Future<void> onWaintngNothing() { return Future.value(); }
   final Widget child;
-  final Future Function() onWaiting;
+  final Future Function(BuildContext) onWaiting;
   const ButtonAndWait({
     super.key,
     required this.child,
-    this.onWaiting = onWaintngNothing,
+    required this.onWaiting,
  });
   @override
   State<ButtonAndWait> createState() => ButtonAndWaitState();
@@ -66,7 +65,7 @@ class ButtonAndWaitState extends State<ButtonAndWait> {
   bool isWaiting = false;
   void onPressed() {
     isWaiting = true;
-    Future<dynamic> resultF = widget.onWaiting();
+    Future<dynamic> resultF = widget.onWaiting(context);
     resultF.then<void>(
       (value) => {
         if (mounted) setState(() => isWaiting = false)

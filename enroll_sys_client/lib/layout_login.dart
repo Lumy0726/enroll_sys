@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import './es_client_session.dart';
 import './layout_hier_top.dart';
+import './layout_listscreen.dart';
 
 
 Widget loginLayout = Scaffold(
@@ -63,7 +64,7 @@ Widget loginLayoutCenter = Expanded(child: Column(
     )),
   ],
 ));
-Future<void> onLoginFunc() {
+Future<void> onLoginFunc(BuildContext context) {
   String id = '';
   String pw = '';
   if (idWidgetKey.currentState != null) {
@@ -74,7 +75,38 @@ Future<void> onLoginFunc() {
     TextFieldSfulState state = pwWidgetKey.currentState as TextFieldSfulState;
     pw = state.inputStr;
   }
-  return EsClientSess.doLogin(id, pw);
+  Future<int> loginRet = EsClientSess.doLogin(id, pw);
+  loginRet.then<void>(
+    (int value) {
+      if (value == 0) {
+        onLoginComplete(context);
+      }
+      else {
+        debugPrint('login failed');
+      }
+    },
+    onError: (e) {
+      debugPrint('login failed');
+    }
+  );
+  return loginRet;
+}
+void onLoginComplete(BuildContext context) {
+  Future<dynamic> pageEndF = Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => listscreenLayout,
+      maintainState: true,
+    )
+  );
+  pageEndF.then<void>(
+    (value) {
+      EsClientSess.doLogout();
+    },
+    onError: (e) {
+      EsClientSess.doLogout();
+    }
+  );
 }
 Widget loginLayoutRight = ConstrainedBox(
   constraints: const BoxConstraints.tightFor(width: 50),
