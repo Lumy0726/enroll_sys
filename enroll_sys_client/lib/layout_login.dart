@@ -126,9 +126,9 @@ void doLogout(BuildContext context) {
 Widget loginLayoutRight = ConstrainedBox(
   constraints: const BoxConstraints.tightFor(width: 50),
   child: const Center(
-    child: ButtonAndWait(
+    child: IconButtonAndWait(
       onWaiting: onLoginFunc,
-      child: Center(child: Icon(Icons.login)),
+      childIcon: Icon(Icons.login),
     ),
   )
 );

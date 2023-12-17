@@ -91,18 +91,59 @@ class SliderState extends State<SliderSful> {
   }
 }
 
-class ButtonAndWait extends StatefulWidget {
+class IconButtonAndWait extends StatefulWidget {
+  final Widget childIcon;
+  final String tooltip;
+  final Future Function(BuildContext) onWaiting;
+  const IconButtonAndWait({
+    super.key,
+    required this.childIcon,
+    this.tooltip = '',
+    required this.onWaiting,
+ });
+  @override
+  State<IconButtonAndWait> createState() => IconButtonAndWaitState();
+}
+class IconButtonAndWaitState extends State<IconButtonAndWait> {
+  bool isWaiting = false;
+  void onPressed() {
+    isWaiting = true;
+    Future<dynamic> resultF = widget.onWaiting(context);
+    resultF.then<void>(
+      (value) => {
+        if (mounted) setState(() => isWaiting = false)
+      },
+      onError: (value) => {
+        if (mounted) setState(() => isWaiting = false)
+      },
+    );
+    if (mounted) { setState(() => isWaiting = true); }
+  }
+  @override
+  Widget build(BuildContext context) {
+    if (!isWaiting) {
+      return IconButton(
+        onPressed: onPressed,
+        tooltip: widget.tooltip,
+        icon: widget.childIcon,
+      );
+    }
+    return const WaitingCircle();
+  }
+}
+
+class ElevatedButtonAndWait extends StatefulWidget {
   final Widget child;
   final Future Function(BuildContext) onWaiting;
-  const ButtonAndWait({
+  const ElevatedButtonAndWait({
     super.key,
     required this.child,
     required this.onWaiting,
  });
   @override
-  State<ButtonAndWait> createState() => ButtonAndWaitState();
+  State<ElevatedButtonAndWait> createState() => ElevatedButtonAndWaitState();
 }
-class ButtonAndWaitState extends State<ButtonAndWait> {
+class ElevatedButtonAndWaitState extends State<ElevatedButtonAndWait> {
   bool isWaiting = false;
   void onPressed() {
     isWaiting = true;

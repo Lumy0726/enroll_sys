@@ -10,17 +10,17 @@ GlobalKey listscreenLayoutSfulKey = GlobalKey<ListscreenLayoutState>();
 Widget listscreenLayout = Scaffold(
   appBar: AppBar(
     title: const Text('강좌/신청된 목록'),
-    actions: <Widget>[
-      Builder(builder: (context) => IconButton(
-        icon: const Icon(Icons.refresh),
+    actions: const <Widget>[
+      IconButtonAndWait(
+        onWaiting: onRefreshButton,
         tooltip: '새로고침',
-        onPressed: () => onRefreshButton(context),
-      )),
-      Builder(builder: (context) => IconButton(
-        icon: const Icon(Icons.settings),
+        childIcon: Icon(Icons.refresh),
+      ),
+      IconButtonAndWait(
+        onWaiting: onSettingsButton,
         tooltip: '설정',
-        onPressed: () => onSettingsButton(context),
-      )),
+        childIcon: Icon(Icons.settings),
+      ),
     ],
   ),
   body: SizedBox.expand(child: Column(
@@ -231,9 +231,17 @@ class CourseInfoWidget extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(
+        SizedBox(
           width: 50, height: 50,
-          child: Icon(Icons.mail_outline),
+          child: IconButtonAndWait(
+            onWaiting: onCourseListButton,
+            tooltip: (id == 2 ? '삭제' : '신청'),
+            childIcon: (
+              id == 2 ?
+              const Icon(Icons.cancel) :
+              const Icon(Icons.add)
+            ),
+          ),
         )
       ],
     );
@@ -261,26 +269,125 @@ class CourseInfoWidget extends StatelessWidget {
 
 
 
-void onRefreshButton(BuildContext context) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('This is a snackbar')));
+Future<void> onRefreshButton(BuildContext context) async {
+  return doUpdateCourseInfo();
 }
 
-void onSettingsButton(BuildContext context) {
+Future<void> onSettingsButton(BuildContext context) async {
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(content: Text('Settings button clicked')));
 }
 
-void doUpdateCourseInfo() {
+Future<void> onCourseListButton(BuildContext context) async {
+  CourseInfoWidget? courseInfoWidget =
+    context.findAncestorWidgetOfExactType<CourseInfoWidget>();
+  if (courseInfoWidget == null) {
+    //Should not be null. Assert(not null).
+    debugPrint('Error: assert(courseInfoWidget == null) is false');
+    return;
+  }
+  if (courseInfoWidget.id == 1 || courseInfoWidget.id == 2) {
+    //CASE OF: user clicked course add/remove button.
+    Future<dynamic> resultF =
+      EsClientSess.enrollCourse(
+        courseInfoWidget.courseInfo.id,
+        ((courseInfoWidget.id == 2) ? true : false) // cancel mode.
+      );
+    return resultF.then<void>(
+      (value) {
+        try {
+          if (listscreen2Key.currentContext == null) { return; }
+          if (value is! Map<String, dynamic>) {
+            ScaffoldMessenger.of(listscreen2Key.currentContext!).showSnackBar(
+              SnackBar(content: Text('Error: $value')));
+            return;
+          }
+          dynamic getResultObj = value['getResult'];
+          dynamic enrollmentResultObj = value['enrollmentResult'];
+          dynamic enrolledListObj = value['enrolledList'];
+          if (
+            enrollmentResultObj == null ||
+            enrollmentResultObj is! String ||
+            enrollmentResultObj != 'complete'
+          ) {
+            if (courseInfoWidget.id == 1) {
+              ScaffoldMessenger.of(listscreen2Key.currentContext!).showSnackBar(
+                SnackBar(content: Text('Enrollment failed: '
+                  '$enrollmentResultObj')));
+            }
+            else {
+              ScaffoldMessenger.of(listscreen2Key.currentContext!).showSnackBar(
+                SnackBar(content: Text('Cancel enrollment failed: '
+                  '$enrollmentResultObj')));
+            }
+          }
+          else {
+            if (courseInfoWidget.id == 1) {
+              ScaffoldMessenger.of(listscreen2Key.currentContext!).showSnackBar(
+                const SnackBar(content: Text('Enrollment complete')));
+            }
+            else {
+              ScaffoldMessenger.of(listscreen2Key.currentContext!).showSnackBar(
+                const SnackBar(content: Text('Cancel enrollment complete')));
+            }
+          }
+          if (
+            getResultObj == null ||
+            getResultObj is! String ||
+            getResultObj != 'complete' ||
+            enrolledListObj == null ||
+            enrolledListObj is! Map<String, dynamic>
+          ) {
+            ScaffoldMessenger.of(listscreen2Key.currentContext!).showSnackBar(
+              const SnackBar(content: Text('Error: '
+                'Getting current enrolled course failed')));
+          }
+          else {
+            Map<String, CourseInfo> result = {};
+            for (var entry in enrolledListObj.entries) {
+              result[entry.key] = CourseInfo.fromJson(entry.value);
+            }
+            var state = listscreen2Key.currentState as ListscreenState;
+            state.onUpdateCourseInfo(result);
+          }
+        }
+        catch (e) {
+          EsClient.printMethod(e.toString());
+        }
+      },
+      onError: (e) {
+        EsClient.printMethod(e.toString());
+      }
+    );
+  }
+  else {
+    //Should not be here.
+    debugPrint('Error: courseInfoWidget.id is not 1 or 2');
+    return;
+  }
+}
+
+bool isUpdating = false;
+Future<void> doUpdateCourseInfo() async {
+  if (isUpdating) return;
+  isUpdating = true;
+  int resultCount = 2;
   Future<dynamic> resultF = EsClientSess.getCourse('');
   resultF.then<void>(
     (value) {
+      resultCount--;
+      if (resultCount == 0) { isUpdating = false; }
       try {
         if (listscreen1Key.currentContext != null) {
           if (value is! Map<String, dynamic>) {
             ScaffoldMessenger.of(listscreen1Key.currentContext!).showSnackBar(
-              SnackBar(content: Text(value.toString())));
+              SnackBar(content: Text('Error: $value')));
+            return;
           }
+        }
+        if (resultCount == 0) {
+          ScaffoldMessenger.of(listscreen2Key.currentContext!).showSnackBar(
+            const SnackBar(content: Text('Course list refreshed')));
         }
         Map<String, CourseInfo> result = {};
         for (var entry in value.entries) {
@@ -296,18 +403,27 @@ void doUpdateCourseInfo() {
       }
     },
     onError: (e) {
+      resultCount--;
+      if (resultCount == 0) { isUpdating = false; }
       EsClient.printMethod(e.toString());
     }
   );
   Future<dynamic> resultF2 = EsClientSess.getCourseEnrolled();
   resultF2.then<void>(
     (value) {
+      resultCount--;
+      if (resultCount == 0) { isUpdating = false; }
       try {
         if (listscreen2Key.currentContext != null) {
           if (value is! Map<String, dynamic>) {
             ScaffoldMessenger.of(listscreen2Key.currentContext!).showSnackBar(
-              SnackBar(content: Text(value.toString())));
+              SnackBar(content: Text('Error: $value')));
+            return;
           }
+        }
+        if (resultCount == 0) {
+          ScaffoldMessenger.of(listscreen2Key.currentContext!).showSnackBar(
+            const SnackBar(content: Text('Course list refreshed')));
         }
         Map<String, CourseInfo> result = {};
         for (var entry in value.entries) {
@@ -323,8 +439,15 @@ void doUpdateCourseInfo() {
       }
     },
     onError: (e) {
+      resultCount--;
+      if (resultCount == 0) { isUpdating = false; }
       EsClient.printMethod(e.toString());
     }
+  );
+  Future<dynamic> resultAll = Future.wait([resultF, resultF2]);
+  return resultAll.then<void>(
+    (value) { return; },
+    onError: (e) { return; }
   );
 }
 
