@@ -314,7 +314,9 @@ class EsServerMain {
     //
     _stuInfoMap['user1']?.enrollList.add('course1111');
     _stuInfoMap['user1']?.enrollList.add('course3333');
+    _stuInfoMap['user1']?.curCpoint = 6;
     _stuInfoMap['user2']?.enrollList.add('course2222');
+    _stuInfoMap['user2']?.curCpoint = 3;
     //
     tInfo = CourseInfo('course1111');
     tInfo.infoTimes.add(CourseTimeInfo(CourseTimeInfo.format2Value(
@@ -322,6 +324,7 @@ class EsServerMain {
       10, 30, 11, 45
     )));
     tInfo.courseName = 'course1111';
+    tInfo.cpoint = 3;
     tInfo.proName = '김교수';
     tInfo.locationStr = 'SomeLocation 103';
     tInfo.groupStr = 'department-A';
@@ -333,6 +336,7 @@ class EsServerMain {
       10, 30, 11, 45
     )));
     tInfo.courseName = 'course2222';
+    tInfo.cpoint = 3;
     tInfo.proName = 'professor2222';
     tInfo.locationStr = 'SomeLocation 205';
     tInfo.groupStr = 'department-B';
@@ -344,6 +348,7 @@ class EsServerMain {
       10, 30, 11, 45
     )));
     tInfo.courseName = 'course3333';
+    tInfo.cpoint = 3;
     tInfo.proName = 'professor3333';
     tInfo.locationStr = 'SomeLocation 109';
     tInfo.groupStr = 'department-C';
@@ -355,6 +360,7 @@ class EsServerMain {
       10, 30, 11, 45
     )));
     tInfo.courseName = 'course4444';
+    tInfo.cpoint = 3;
     tInfo.proName = 'professor4444';
     tInfo.locationStr = 'SomeLocation 110';
     tInfo.groupStr = 'department-A';
@@ -366,6 +372,7 @@ class EsServerMain {
       10, 30, 11, 45
     )));
     tInfo.courseName = 'course5555';
+    tInfo.cpoint = 3;
     tInfo.proName = 'professor5555';
     tInfo.locationStr = 'SomeLocation 301';
     tInfo.groupStr = 'department-B';

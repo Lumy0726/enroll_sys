@@ -145,21 +145,29 @@ class UserInfo {
   String id;
   String idDecimal;
   String hashedPw;
+  int maxCpoint; // max course point.
+  int curCpoint; // current course point.
   Set<String> enrollList = {};
   UserInfo(
     final String idParam,
     final String idDecimalParam,
-    final String hashedPwParam
+    final String hashedPwParam,
+    { final int maxCpointParam = 18,
+    final int curCpointParam = 0,}
   ) :
     id = idParam,
     idDecimal = idDecimalParam,
-    hashedPw = hashedPwParam;
+    hashedPw = hashedPwParam,
+    maxCpoint = maxCpointParam,
+    curCpoint = curCpointParam;
   UserInfo.clone(
     final UserInfo obj
   ) :
     id = obj.id,
     idDecimal = obj.idDecimal,
-    hashedPw = obj.hashedPw
+    hashedPw = obj.hashedPw,
+    maxCpoint = obj.maxCpoint,
+    curCpoint = obj.curCpoint
   {
     enrollList = Set<String>.from(obj.enrollList);
   }
@@ -169,7 +177,9 @@ class UserInfo {
   UserInfo.fromJson(final Map<String, dynamic> json) :
     id = json['id'],
     idDecimal = json['idDecimal'],
-    hashedPw = json['hashedPw']
+    hashedPw = json['hashedPw'],
+    maxCpoint = json['maxCpoint'],
+    curCpoint = json['curCpoint']
   {
     for (dynamic value in (json['enrollList'] as List<dynamic>)) {
       enrollList.add(value);
@@ -180,6 +190,8 @@ class UserInfo {
     'id': id,
     'idDecimal': idDecimal,
     'hashedPw': hashedPw,
+    'maxCpoint': maxCpoint,
+    'curCpoint': curCpoint,
     'enrollList': List<String>.from(enrollList),
   };
 }
@@ -192,9 +204,16 @@ class UserInfoCDetail extends UserInfo {
   UserInfoCDetail(
     final String idParam,
     final String idDecimalParam,
-    final String hashedPwParam
-  ) :
-    super(idParam, idDecimalParam, hashedPwParam) { ; }
+    final String hashedPwParam,
+    { final int maxCpointParam = 18,
+    final int curCpointParam = 0,}
+  ) : super(
+    idParam,
+    idDecimalParam,
+    hashedPwParam,
+    maxCpointParam: maxCpointParam,
+    curCpointParam: curCpointParam,
+  );
   UserInfoCDetail.clone(
     final UserInfo obj
   ) :
@@ -319,6 +338,7 @@ class CourseSearchP extends SearchParam {
     availableKeys = [
       'id',
       'courseName',
+      'cpoint',
       'infoTimes',
       'proName',
       'locationStr',
@@ -334,6 +354,8 @@ class CourseInfo {
   String id;
   //The name of course.
   String courseName = '';
+  // course point (usually 1~3).
+  int cpoint = 0;
   //Course time information.
   List<CourseTimeInfo> infoTimes = [];
   //Name of the professor.
@@ -346,12 +368,13 @@ class CourseInfo {
   String etc = '';
 
   //constructor
-  CourseInfo(String idParam) : id = idParam;
+  CourseInfo([String idParam = '']) : id = idParam;
   CourseInfo.clone(
     final CourseInfo obj
   ) :
     id = obj.id,
     courseName = obj.courseName,
+    cpoint = obj.cpoint,
     proName = obj.proName,
     locationStr = obj.locationStr,
     groupStr = obj.groupStr,
@@ -367,6 +390,7 @@ class CourseInfo {
   CourseInfo.fromJson(final Map<String, dynamic> json) :
     id = json['id'],
     courseName = json['courseName'],
+    cpoint = json['cpoint'],
     proName = json['proName'],
     locationStr = json['locationStr'],
     groupStr = json['groupStr'],
@@ -380,6 +404,7 @@ class CourseInfo {
   {
     'id': id,
     'courseName': courseName,
+    'cpoint': cpoint,
     'infoTimes': infoTimes,
     'proName': proName,
     'locationStr': locationStr,
@@ -427,6 +452,28 @@ class CourseInfo {
           else {
             return searchParam.cType == SPCType.regex;
           }
+      } // switch: end
+    }
+    else if (
+      searchParam.key == 'cpoint'
+    ) {
+      //CASE OF: searching is for integer.
+      int targetV = 0;
+      int? searchV = int.tryParse(searchParam.value);
+      if (searchV == null) { return false; }
+      if (searchParam.key == 'cpoint') { targetV = cpoint; }
+      switch(searchParam.cType) { // switch: start
+        case SPCType.eq: return targetV == searchV;
+        case SPCType.ne: return targetV != searchV;
+        case SPCType.lt: return targetV < searchV;
+        case SPCType.gt: return targetV > searchV;
+        case SPCType.le: return targetV <= searchV;
+        case SPCType.ge: return targetV >= searchV;
+        case SPCType.inc:
+        case SPCType.ninc:
+        case SPCType.regex:
+        case SPCType.nregex:
+          return false;
       } // switch: end
     }
     else if (searchParam.key == 'infoTimes') {

@@ -211,7 +211,7 @@ class CourseInfoWidget extends StatelessWidget {
       padding: const EdgeInsets.all(4),
       color: Theme.of(context).colorScheme.outline,
       child: Container(
-        padding: const EdgeInsets.all(2),
+        padding: const EdgeInsets.all(4),
         color: Theme.of(context).colorScheme.surface,
         child: Text(courseInfo.id),
       ),

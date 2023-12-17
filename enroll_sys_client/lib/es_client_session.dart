@@ -211,10 +211,11 @@ class EsClientSess {
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
+      if (EsClient.printMethodMode == PrintMethodMode.ON) {
+        EsClient.printMethod(
+          const JsonEncoder.withIndent('  ').convert(rObjDyn));
+      }
       return rObjDyn;
-      //EsClient.printMethod(
-        //const JsonEncoder.withIndent('  ').convert(rObjDyn));
-      //return 0;
     }
     catch (e) {
       EsClient.printMethod('Error while get course request, ($e)');
@@ -245,6 +246,10 @@ class EsClientSess {
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
+      if (EsClient.printMethodMode == PrintMethodMode.ON) {
+        EsClient.printMethod(
+          const JsonEncoder.withIndent('  ').convert(rObjDyn));
+      }
       return rObjDyn;
     }
     catch (e) {
@@ -283,6 +288,10 @@ class EsClientSess {
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
+      if (EsClient.printMethodMode == PrintMethodMode.ON) {
+        EsClient.printMethod(
+          const JsonEncoder.withIndent('  ').convert(rObjDyn));
+      }
       return rObjDyn;
     }
     catch (e) {
@@ -327,6 +336,10 @@ class EsClientSess {
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
+      if (EsClient.printMethodMode == PrintMethodMode.ON) {
+        EsClient.printMethod(
+          const JsonEncoder.withIndent('  ').convert(rObjDyn));
+      }
       return rObjDyn;
     }
     catch (e) {
