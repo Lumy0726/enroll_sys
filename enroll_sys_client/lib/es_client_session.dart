@@ -163,7 +163,7 @@ class EsClientSess {
 
   //'getCourse' function.
   //get list of course (with query params) from server.
-  static Future<int> getCourse(
+  static Future<dynamic> getCourse(
     final String params
   ) async {
     if (_conState != ST_LOGINED) {
@@ -211,8 +211,10 @@ class EsClientSess {
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
-      EsClient.printMethod(const JsonEncoder.withIndent('  ').convert(rObjDyn));
-      return 0;
+      return rObjDyn;
+      //EsClient.printMethod(
+        //const JsonEncoder.withIndent('  ').convert(rObjDyn));
+      //return 0;
     }
     catch (e) {
       EsClient.printMethod('Error while get course request, ($e)');
@@ -222,7 +224,7 @@ class EsClientSess {
 
   //'getCourseEnrolled' function.
   //get list of enrolled course from server.
-  static Future<int> getCourseEnrolled() async {
+  static Future<dynamic> getCourseEnrolled() async {
     if (_conState != ST_LOGINED) {
       EsClient.printMethod('Please login to get courses');
       return 1;
@@ -243,8 +245,7 @@ class EsClientSess {
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
-      EsClient.printMethod(const JsonEncoder.withIndent('  ').convert(rObjDyn));
-      return 0;
+      return rObjDyn;
     }
     catch (e) {
       EsClient.printMethod('Error while get course enrolled request, ($e)');
@@ -254,7 +255,7 @@ class EsClientSess {
 
   //'enrollCourse' function.
   //request enrollment to the server (or cancel request).
-  static Future<int> enrollCourse(
+  static Future<dynamic> enrollCourse(
     final String enrollmentRqId,
     [ final bool cancelMode = false ]
   ) async {
@@ -282,8 +283,7 @@ class EsClientSess {
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
-      EsClient.printMethod(const JsonEncoder.withIndent('  ').convert(rObjDyn));
-      return 0;
+      return rObjDyn;
     }
     catch (e) {
       EsClient.printMethod('Error while put course enrolled request, ($e)');
@@ -293,7 +293,7 @@ class EsClientSess {
 
   //'cancelCourse' function.
   //request enrollment cancel to the server.
-  static Future<int> cancelCourse(
+  static Future<dynamic> cancelCourse(
     final String enrollmentRqId
   ) async {
     return enrollCourse(enrollmentRqId, true);
@@ -301,7 +301,7 @@ class EsClientSess {
 
   //'getMyinfo' function.
   //get current login-ed user information from server.
-  static Future<int> getMyinfo([final bool courseDetail = false ]) async {
+  static Future<dynamic> getMyinfo([final bool courseDetail = false ]) async {
     if (_conState != ST_LOGINED) {
       EsClient.printMethod('Please login to get user information');
       return 1;
@@ -327,8 +327,7 @@ class EsClientSess {
         return 2;
       }
       final dynamic rObjDyn = await utf8StreamList2JsonObj(response);
-      EsClient.printMethod(const JsonEncoder.withIndent('  ').convert(rObjDyn));
-      return 0;
+      return rObjDyn;
     }
     catch (e) {
       EsClient.printMethod('Error while get user information request, ($e)');

@@ -82,11 +82,13 @@ Future<void> onLoginFunc(BuildContext context) {
         onLoginComplete(context);
       }
       else {
-        debugPrint('login failed');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login failed')));
       }
     },
     onError: (e) {
-      debugPrint('login failed');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login failed')));
     }
   );
   return loginRet;
@@ -100,11 +102,24 @@ void onLoginComplete(BuildContext context) {
     )
   );
   pageEndF.then<void>(
-    (value) {
-      EsClientSess.doLogout();
+    (value) => doLogout(context),
+    onError: (e) => doLogout(context),
+  );
+}
+void doLogout(BuildContext context) {
+  Future<int> resultF = EsClientSess.doLogout();
+  resultF.then<void>(
+    (int value) {
+      if (value == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Logout complete')));
+      }
+      else {
+        debugPrint('logout failed');
+      }
     },
     onError: (e) {
-      EsClientSess.doLogout();
+      debugPrint('logout failed');
     }
   );
 }

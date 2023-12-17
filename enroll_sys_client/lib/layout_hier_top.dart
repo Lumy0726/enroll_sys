@@ -50,6 +50,47 @@ class _WaitingCircleState
   }
 }
 
+class SliderSful extends StatefulWidget {
+  final void Function(BuildContext, double) onChanged;
+  final double min;
+  final double max;
+  final int divisions;
+  final double initValue;
+  const SliderSful({
+    super.key,
+    required this.onChanged,
+    this.min = 0,
+    this.max = 100,
+    this.divisions = 100,
+    this.initValue = 0,
+  });
+  @override
+  State<SliderSful> createState() => SliderState();
+}
+class SliderState extends State<SliderSful> {
+  double _currentSliderValue = 0;
+  @override
+  void initState() {
+    _currentSliderValue = widget.initValue;
+    super.initState();
+  }
+  void onChanged(double value) {
+    widget.onChanged(context, value);
+    if (mounted) { setState(() => _currentSliderValue = value); }
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Slider(
+      value: _currentSliderValue,
+      min: widget.min,
+      max: widget.max,
+      divisions: widget.divisions,
+      label: _currentSliderValue.round().toString(),
+      onChanged: onChanged,
+    );
+  }
+}
+
 class ButtonAndWait extends StatefulWidget {
   final Widget child;
   final Future Function(BuildContext) onWaiting;
