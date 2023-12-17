@@ -207,15 +207,53 @@ class CourseInfoWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 100,
       padding: const EdgeInsets.all(4),
       color: Theme.of(context).colorScheme.outline,
       child: Container(
         padding: const EdgeInsets.all(4),
         color: Theme.of(context).colorScheme.surface,
-        child: Text(courseInfo.id),
+        child: buildChild(context),
       ),
     );
+  }
+  Widget buildChild(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(courseInfo.id),
+              Text(getInfoTimesStr(context)),
+              Text([courseInfo.proName, courseInfo.locationStr].join(', ')),
+              Text(getDetailStr(context)),
+            ],
+          ),
+        ),
+        const SizedBox(
+          width: 50, height: 50,
+          child: Icon(Icons.mail_outline),
+        )
+      ],
+    );
+  }
+  String getInfoTimesStr(BuildContext context) {
+    List<String> timesStrList = [];
+    for (CourseTimeInfo infoTime in courseInfo.infoTimes) {
+      timesStrList.add(infoTime.toString());
+      //timesStrList.add(infoTime.value.toString());
+    }
+    return timesStrList.join(', ');
+  }
+  String getDetailStr(BuildContext context) {
+    List<String> strList = [
+      courseInfo.id,
+      courseInfo.groupStr,
+      '${courseInfo.cpoint}학점',
+      '특이사항: ${courseInfo.etc}',
+    ];
+    return strList.join(', ');
   }
 }
 

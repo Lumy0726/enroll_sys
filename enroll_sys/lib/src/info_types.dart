@@ -298,16 +298,16 @@ class CourseTimeInfo {
     return (value ~/ 10000000) * 10000000;
   }
   static int value2StartHour(final int value) {
-    return ((value ~/ (60 * 24 * 60)) % 24) * 60 * 24 * 60;
+    return (((value % 10000000) ~/ (60 * 24 * 60)) % 24);
   }
   static int value2StartMin(final int value) {
-    return ((value ~/ (24 * 60)) % 60) * 24 * 60;
+    return (((value % 10000000) ~/ (24 * 60)) % 60);
   }
   static int value2EndHour(final int value) {
-    return ((value ~/ 60) % 24) * 60;
+    return (((value % 10000000) ~/ 60) % 24);
   }
   static int value2EndMin(final int value) {
-    return value % 60;
+    return (value % 10000000) % 60;
   }
 
   void format2Set(
@@ -325,6 +325,27 @@ class CourseTimeInfo {
   int get startMin => CourseTimeInfo.value2StartMin(value);
   int get endHour => CourseTimeInfo.value2EndHour(value);
   int get endMin => CourseTimeInfo.value2EndMin(value);
+
+  @override
+  String toString() {
+    String dayStr = '';
+    switch(day){
+      case MON: dayStr = '월'; break;
+      case TUE: dayStr = '화'; break;
+      case WED: dayStr = '수'; break;
+      case THU: dayStr = '목'; break;
+      case FRI: dayStr = '금'; break;
+      case SAT: dayStr = '토'; break;
+      case SUN: dayStr = '일'; break;
+    }
+    return (
+      '$dayStr '
+      '${startHour.toString().padLeft(2, '0')}:'
+      '${startMin.toString().padLeft(2, '0')} ~ '
+      '${endHour.toString().padLeft(2, '0')}:'
+      '${endMin.toString().padLeft(2, '0')}'
+    );
+  }
 }
 
 ///'CourseSearchP extends SearchParam' class (Course search param).
